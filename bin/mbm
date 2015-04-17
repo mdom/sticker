@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Mojo::UserAgent;
+use Mojo::DOM;
+use Mojo::URL;
+use Mojo::ByteStream 'b';
+use Path::Tiny;
+
+my $base = path('~/.mbm/');
+$base->mkpath();
+
+for (qw(title content url)) {
+    $base->child($_)->mkpath();
+}
+
+my $mode = shift;
+
+if ( $mode eq 'add' ) {
+    my $url = shift;
+    add_url($url);
+}
+
+elsif ( $mode eq 'import' ) {
+    my $file    = shift;
+    my $content = path($file)->slurp_utf8;
+    my $dom     = Mojo::DOM->new($content);
+    my $urls    = $dom->find('a["href"]')->map( attr => 'href' )->grep(sub{/^http/});
+    add_url(@$urls);
+}
+elsif ( $mode eq 'tag' ) {
+    my $url  = shift;
+    my $id   = b($url)->sha1_sum;
+    my @tags = split( ' ', db_get( $base, $id, 'tag' ) );
+}
+elsif ( $mode eq 'search' ) {
+    my @terms = @ARGV ? @ARGV : '.';
+    my @matches;
+    my @ids = map { $_->basename } $base->child('url')->children;
+    for my $id (@ids) {
+        my $title   = db_get( $base, $id, 'title' );
+        my $content = db_get( $base, $id, 'content' );
+        for my $term (@terms) {
+            if ( $title =~ /$term/ or $content =~ /$term/ ) {
+                push @matches, $id;
+            }
+        }
+    }
+    for my $id (@matches) {
+        my $url   = db_get( $base, $id, 'url' );
+        my $title = db_get( $base, $id, 'title' );
+        my $line  = "$url - $title";
+        print b($line)->encode . "\n";
+    }
+}
+
+sub db_keys {
+    my ($base) = @_;
+    return map { $_->basename } $base->child('url')->children;
+}
+
+sub db_get {
+    my ( $base, $id, $prop ) = @_;
+    return $base->child($prop)->child($id)->slurp_utf8;
+}
+
+sub db_set {
+    my ( $base, $id, $prop, $content ) = @_;
+    return $base->child($prop)->child($id)->spew_utf8($content);
+}
+
+sub add_url {
+    my @urls = @_;
+    my $ua   = Mojo::UserAgent->new()->max_redirects(5);
+    Mojo::IOLoop->delay(
+        sub {
+            my $delay = shift;
+            for my $url (@urls) {
+                $delay->pass($url);
+                $ua->get( $url, $delay->begin );
+            }
+        },
+        sub {
+            my ( $delay, @args ) = @_;
+            while (@args) {
+                my ( $url, $tx ) = splice( @args, 0, 2 );
+                if ( my $res = $tx->success ) {
+                    my $dom   = $res->dom;
+                    my $title = b( $dom->at('title')->all_text() )->squish;
+                    $dom->find('script')->map('remove');
+                    my $content = $dom->all_text();
+                    my $id      = b($url)->sha1_sum;
+                    db_set( $base, $id, 'title',   $title );
+                    db_set( $base, $id, 'content', $content );
+                    db_set( $base, $id, 'url',     $url );
+                }
+            }
+        }
+    )->wait();
+}
