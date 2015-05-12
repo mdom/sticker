@@ -37,21 +37,20 @@ for (qw(title content url)) {
 my $mode = shift;
 
 my %dispatch = (
-	add => \&mode_add,
-	import => \&mode_import,
-	edit => \&mode_edit,
-	tag => \&mode_tag,
-	search => \&mode_search,
-	open => \&mode_open,
+    add    => \&mode_add,
+    import => \&mode_import,
+    edit   => \&mode_edit,
+    tag    => \&mode_tag,
+    search => \&mode_search,
+    open   => \&mode_open,
 );
 
 if ( exists $dispatch{$mode} ) {
-	$dispatch{$mode}->(@ARGV);
+    $dispatch{$mode}->(@ARGV);
 }
 else {
-	die "$0: Unknown mode $mode\n";
+    die "$0: Unknown mode $mode\n";
 }
-
 
 sub mode_add {
     my $url = shift;
@@ -68,19 +67,18 @@ sub mode_import {
     add_urls($urls);
 }
 
-
 sub mode_edit {
-	my ($url) = @_;
-	my $id   = b($url)->sha1_sum;
-	my $file = $base->child('url')->child($id);
-	system('vi', $file);
+    my ($url) = @_;
+    my $id    = b($url)->sha1_sum;
+    my $file  = $base->child('url')->child($id);
+    system( 'vi', $file );
 }
 
 sub mode_tag {
-    my ($url,@new_tags) = @_;
-    my $id   = b($url)->sha1_sum;
-    my @old_tags = b(db_get( $base, $id, 'tag' ))->split(' ');
-    db_set($base,$id,'tag',c(@old_tags, @new_tags)->uniq);
+    my ( $url, @new_tags ) = @_;
+    my $id = b($url)->sha1_sum;
+    my @old_tags = b( db_get( $base, $id, 'tag' ) )->split(' ');
+    db_set( $base, $id, 'tag', c( @old_tags, @new_tags )->uniq );
 }
 
 sub mode_open {
@@ -88,7 +86,6 @@ sub mode_open {
     my @urls = $base->child('mbm_last_search')->lines();
     system( @{ $config->{handler} }, $urls[ $num - 1 ] );
 }
-
 
 sub mode_search {
     my @terms = @_ ? @_ : '';
@@ -112,6 +109,7 @@ sub _db_parse_file {
     my $file = shift;
     my %attrs;
     if ( $file->exists ) {
+
         # TODO Line folding
         my $content = $file->slurp_utf8;
         %attrs = ( $content =~ /^(\S+?):\s*(.*)/gm );
@@ -120,13 +118,13 @@ sub _db_parse_file {
 }
 
 sub db_to_key {
-	my $string = shift;
-	return b($string)->sha1_sum;
+    my $string = shift;
+    return b($string)->sha1_sum;
 }
 
 sub db_file_for_key {
-	my ($base,$key) = @_;
-	return $base->child('url')->child($key);
+    my ( $base, $key ) = @_;
+    return $base->child('url')->child($key);
 }
 
 sub db_get {
@@ -140,6 +138,7 @@ sub db_set {
     my $file  = $base->child('url')->child($id);
     my %attrs = _db_parse_file( $base->child('url')->child($id) );
     %attrs = ( %attrs, %new_attrs );
+
     # TODO Line folding
     return $file->spew_utf8(
         join( "\n", map { $_ . ': ' . $attrs{$_} } keys %attrs ) );
