@@ -36,12 +36,29 @@ for (qw(title content url)) {
 
 my $mode = shift;
 
-if ( $mode eq 'add' ) {
+my %dispatch = (
+	add => \&mode_add,
+	import => \&mode_import,
+	edit => \&mode_edit,
+	tag => \&mode_tag,
+	search => \&mode_search,
+	open => \&mode_open,
+);
+
+if ( exists $dispatch{$mode} ) {
+	$dispatch{$mode}->(@ARGV);
+}
+else {
+	die "$0: Unknown mode $mode\n";
+}
+
+
+sub mode_add {
     my $url = shift;
     add_urls( [$url] );
 }
 
-elsif ( $mode eq 'import' ) {
+sub mode_import {
     my $file    = shift;
     my $content = path($file)->slurp_utf8;
     my $dom     = Mojo::DOM->new($content);
@@ -50,53 +67,91 @@ elsif ( $mode eq 'import' ) {
       ->to_array;
     add_urls($urls);
 }
-elsif ( $mode eq 'tag' ) {
-    my $url  = shift;
+
+
+sub mode_edit {
+	my ($url) = @_;
+	my $id   = b($url)->sha1_sum;
+	my $file = $base->child('url')->child($id);
+	system('vi', $file);
+}
+
+sub mode_tag {
+    my ($url,@new_tags) = @_;
     my $id   = b($url)->sha1_sum;
-    my @tags = split( ' ', db_get( $base, $id, 'tag' ) );
+    my @old_tags = b(db_get( $base, $id, 'tag' ))->split(' ');
+    db_set($base,$id,'tag',c(@old_tags, @new_tags)->uniq);
 }
-elsif ( $mode eq 'open' ) {
-	my $num = shift;
-	my @urls = $base->child('mbm_last_search')->lines();
-	system(@{$config->{handler}},$urls[$num-1]);
+
+sub mode_open {
+    my $num  = shift;
+    my @urls = $base->child('mbm_last_search')->lines();
+    system( @{ $config->{handler} }, $urls[ $num - 1 ] );
 }
-elsif ( $mode eq 'search' ) {
-    my @terms = @ARGV ? @ARGV : '';
+
+
+sub mode_search {
+    my @terms = @_ ? @_ : '';
     my $matches = db_search( $base, [qw(title url content)], $terms[0] );
     my $hist_fh = $base->child('mbm_last_search')->openw_utf8();
 
-    my $i = 0;
+    my $i   = 0;
     my $len = length(@$matches);
     for my $id (@$matches) {
         my $url   = db_get( $base, $id, 'url' );
         my $title = db_get( $base, $id, 'title' );
-        my $line  = sprintf("%*d $url - $title",$len,++$i);
+        my $line = sprintf( "%*d $url - $title", $len, ++$i );
         print b($line)->encode . "\n";
-	print {$hist_fh} "$url\n";
+        print {$hist_fh} "$url\n";
     }
 }
 
-sub db_keys {
-    my ($base) = @_;
-    return map { $_->basename } $base->child('url')->children;
+# TODO Caching
+
+sub _db_parse_file {
+    my $file = shift;
+    my %attrs;
+    if ( $file->exists ) {
+        # TODO Line folding
+        my $content = $file->slurp_utf8;
+        %attrs = ( $content =~ /^(\S+?):\s*(.*)/gm );
+    }
+    return %attrs;
+}
+
+sub db_to_key {
+	my $string = shift;
+	return b($string)->sha1_sum;
+}
+
+sub db_file_for_key {
+	my ($base,$key) = @_;
+	return $base->child('url')->child($key);
 }
 
 sub db_get {
-    my ( $base, $id, $prop ) = @_;
-    return $base->child($prop)->child($id)->slurp_utf8;
+    my ( $base, $id, @props ) = @_;
+    my %attrs = _db_parse_file( $base->child('url')->child($id) );
+    return @attrs{@props};
 }
 
 sub db_set {
-    my ( $base, $id, $prop, $content ) = @_;
-    return $base->child($prop)->child($id)->spew_utf8($content);
+    my ( $base, $id, %new_attrs ) = @_;
+    my $file  = $base->child('url')->child($id);
+    my %attrs = _db_parse_file( $base->child('url')->child($id) );
+    %attrs = ( %attrs, %new_attrs );
+    # TODO Line folding
+    return $file->spew_utf8(
+        join( "\n", map { $_ . ': ' . $attrs{$_} } keys %attrs ) );
 }
 
 sub db_search {
     my ( $base, $props, $term ) = @_;
-    local ( @ARGV, $_ ) = map { $base->child($_)->children() } @$props;
+    local ( @ARGV, $_ ) = $base->child('url')->children;
     return if !@ARGV;
     my @matches;
     while (<>) {
+        s/^(\S+?):\s+//;
         if (/$term/o) {
             push @matches, $ARGV;
             close ARGV;
@@ -150,8 +205,11 @@ sub process_tx {
 
             $content = $dom->all_text();
             if ($content) {
-                $content = b($content)->squish->split(' ')
-                  ->uniq->grep( sub { not exists $stopword{$_} } )->join(' ');
+                $content =
+                  b($content)->squish->split(qr/[[:punct:][:space:]]+/)
+                  ->map( sub        { lc } )
+                  ->uniq->grep( sub { not exists $stopword{$_} } )
+                  ->grep( sub       { length > 1 } )->join(' ');
             }
             else {
                 warn "No words for $url\n";
@@ -159,9 +217,13 @@ sub process_tx {
         }
         my $id = b($url)->sha1_sum;
 
-        db_set( $base, $id, 'title',   $title   || '' );
-        db_set( $base, $id, 'content', $content || '' );
-        db_set( $base, $id, 'url',     $url );
+        db_set(
+            $base, $id,
+            title   => $title   || '',
+            content => $content || '',
+            url     => $url
+        );
+
     }
     else {
         my $err = $tx->error;
