@@ -70,6 +70,7 @@ sub mode_import {
 
 sub mode_edit {
     my ($url) = @_;
+    $url = normalize_url($url);
     my $id    = b($url)->sha1_sum;
     my $file  = $base->child('url')->child($id);
     system( 'vi', $file );
@@ -77,6 +78,7 @@ sub mode_edit {
 
 sub mode_tag {
     my ( $url, @new_tags ) = @_;
+    $url = normalize_url($url);
     my $id = b($url)->sha1_sum;
     my @old_tags = b( db_get( $base, $id, 'tag' ) )->split(' ');
     db_set( $base, $id, 'tag', c( @old_tags, @new_tags )->uniq );
@@ -239,12 +241,14 @@ sub process_tx {
     }
 }
 
+# TODO foo.com is parsed as path and not host component?!
 sub normalize_url {
     my $url_string = shift;
     my $url        = Mojo::URL->new($url_string);
+    $url->scheme('http') if !$url->scheme;
+    $url->authority('')  if !$url->authority;
+    $url->port(undef)    if $url->port && $url->port == 80;
     $url->path('/')      if $url->path eq '';
-    $url->scheme('http') if $url->scheme eq '';
-    $url->port(undef)    if $url->port == 80;
     return $url;
 }
 
