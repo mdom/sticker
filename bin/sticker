@@ -44,6 +44,7 @@ my %dispatch = (
     tag    => \&mode_tag,
     search => \&mode_search,
     open   => \&mode_open,
+    delete => \&mode_delete,
 );
 
 if ( exists $dispatch{$mode} ) {
@@ -66,6 +67,21 @@ sub mode_import {
       $dom->find('a["href"]')->map( attr => 'href' )->grep( sub { /^http/ } )
       ->to_array;
     add_urls($urls);
+}
+
+sub mode_delete {
+    my ($arg) = @_;
+    # TODO Code duplication
+    my $url = number_to_url($arg);
+    die "No url for $arg\n"
+      if !$url;
+    $url = normalize_url($url);
+    my $id   = b($url)->sha1_sum;
+    my $file = $base->child('url')->child($id);
+    if ( $file->exists ) {
+        $file->remove();
+    }
+    return;
 }
 
 sub mode_edit {
