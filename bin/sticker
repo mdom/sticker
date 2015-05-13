@@ -69,7 +69,10 @@ sub mode_import {
 }
 
 sub mode_edit {
-    my ($url) = @_;
+    my ($arg) = @_;
+    my $url = number_to_url($arg);
+    die "No url for $arg\n"
+      if !$url;
     $url = normalize_url($url);
     my $id    = b($url)->sha1_sum;
     my $file  = $base->child('url')->child($id);
@@ -77,7 +80,10 @@ sub mode_edit {
 }
 
 sub mode_tag {
-    my ( $url, @new_tags ) = @_;
+    my ( $arg, @new_tags ) = @_;
+    my $url = number_to_url($arg);
+    die "No url for $arg\n"
+      if !$url;
     $url = normalize_url($url);
     my $id = b($url)->sha1_sum;
     my @old_tags = b( db_get( $base, $id, 'tag' ) )->split(' ');
@@ -85,9 +91,11 @@ sub mode_tag {
 }
 
 sub mode_open {
-    my $num  = shift;
-    my @urls = $base->child('mbm_last_search')->lines();
     system( @{ $config->{handler} }, $urls[ $num - 1 ] );
+    my $arg = shift;
+    my $url = number_to_url($arg);
+    die "No url for $arg\n"
+      if !$url;
 }
 
 sub mode_search {
@@ -104,6 +112,21 @@ sub mode_search {
         print b($line)->encode . "\n";
         print {$hist_fh} "$url\n";
     }
+}
+
+sub number_to_url {
+    my $arg = shift;
+    if ( $arg =~ /\d+/ ) {
+        my $last_search = $base->child('mbm_last_search');
+        if ( $last_search->exists ) {
+            my @urls = $last_search->lines( { chomp => 1 } );
+            return $urls[ $arg - 1 ];
+        }
+    }
+    else {
+        return $arg;
+    }
+    return;
 }
 
 # TODO Caching
