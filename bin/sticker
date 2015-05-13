@@ -74,8 +74,8 @@ sub mode_edit {
     die "No url for $arg\n"
       if !$url;
     $url = normalize_url($url);
-    my $id    = b($url)->sha1_sum;
-    my $file  = $base->child('url')->child($id);
+    my $id   = b($url)->sha1_sum;
+    my $file = $base->child('url')->child($id);
     system( 'vi', $file );
 }
 
@@ -87,15 +87,15 @@ sub mode_tag {
     $url = normalize_url($url);
     my $id = b($url)->sha1_sum;
     my @old_tags = b( db_get( $base, $id, 'tag' ) )->split(' ');
-    db_set( $base, $id, 'tag', c( @old_tags, @new_tags )->uniq );
+    return db_set( $base, $id, 'tag', c( @old_tags, @new_tags )->uniq );
 }
 
 sub mode_open {
-    system( @{ $config->{handler} }, $urls[ $num - 1 ] );
     my $arg = shift;
     my $url = number_to_url($arg);
     die "No url for $arg\n"
       if !$url;
+    return system( @{ $config->{handler} }, $url );
 }
 
 sub mode_search {
@@ -193,7 +193,7 @@ sub add_urls {
     state $delay = Mojo::IOLoop->delay();
 
     while ( $idle and my $url = shift @$urls ) {
-	$url = normalize_url($url);
+        $url = normalize_url($url);
         $idle--;
         my $cb = $delay->begin;
         $ua->get(
