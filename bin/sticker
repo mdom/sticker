@@ -92,7 +92,10 @@ sub mode_edit {
     $url = normalize_url($url);
     my $id   = b($url)->sha1_sum;
     my $file = $base->child('url')->child($id);
-    system( 'vi', $file );
+    if ( $file->exists ) {
+        system( 'vi', $file );
+    }
+    return;
 }
 
 sub mode_tag {
