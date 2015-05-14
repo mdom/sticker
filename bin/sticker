@@ -136,7 +136,7 @@ sub to_url {
         my $last_search = $base->child('mbm_last_search');
         if ( $last_search->exists ) {
             my @urls = $last_search->lines( { chomp => 1 } );
-            $url = $urls[ $arg - 1 ];
+            $url = $urls[ $url - 1 ];
         }
     }
     $url = normalize_url($url);
