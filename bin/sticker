@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use feature "state", "say";
+use feature "state";
 use Getopt::Long;
 use Mojo::UserAgent;
 use Mojo::DOM;
