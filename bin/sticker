@@ -75,7 +75,6 @@ sub mode_delete {
     my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    $url = normalize_url($url);
     my $id   = b($url)->sha1_sum;
     my $file = $base->child('url')->child($id);
     if ( $file->exists ) {
@@ -89,7 +88,6 @@ sub mode_edit {
     my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    $url = normalize_url($url);
     my $id   = b($url)->sha1_sum;
     my $file = $base->child('url')->child($id);
     if ( $file->exists ) {
@@ -103,7 +101,6 @@ sub mode_tag {
     my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    $url = normalize_url($url);
     my $id = b($url)->sha1_sum;
     my @old_tags = b( db_get( $base, $id, 'tag' ) )->split(' ');
     return db_set( $base, $id, 'tag', c( @old_tags, @new_tags )->uniq );
@@ -133,19 +130,17 @@ sub mode_search {
     }
 }
 
-    my $arg = shift;
-    if ( $arg =~ /\d+/ ) {
 sub to_url {
+    my $url = shift;
+    if ( $url =~ /\d+/ ) {
         my $last_search = $base->child('mbm_last_search');
         if ( $last_search->exists ) {
             my @urls = $last_search->lines( { chomp => 1 } );
-            return $urls[ $arg - 1 ];
+            $url = $urls[ $arg - 1 ];
         }
     }
-    else {
-        return $arg;
-    }
-    return;
+    $url = normalize_url($url);
+    return $url;
 }
 
 # TODO Caching
