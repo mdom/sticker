@@ -11,9 +11,6 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Path::Tiny;
 
-my $base = path('~/.mbm/');
-$base->mkpath();
-
 sub get_config {
     my %default_config = (
         stopwords => [
@@ -47,29 +44,35 @@ sub get_config {
     return $config;
 }
 
-my $config = get_config();
+my $config;
 
-for (qw(url)) {
-    $base->child($_)->mkpath();
-}
+sub main {
+    $config = get_config();
+    $config->{base} = path('~/.mbm/');
+    $config->{base}->mkpath();
 
-my $mode = shift;
+    for (qw(url)) {
+        $config->{base}->child($_)->mkpath();
+    }
 
-my %dispatch = (
-    add    => \&mode_add,
-    import => \&mode_import,
-    edit   => \&mode_edit,
-    tag    => \&mode_tag,
-    search => \&mode_search,
-    open   => \&mode_open,
-    delete => \&mode_delete,
-);
+    my $mode = shift;
 
-if ( exists $dispatch{$mode} ) {
-    $dispatch{$mode}->(@ARGV);
-}
-else {
-    die "$0: Unknown mode $mode\n";
+    my %dispatch = (
+        add    => \&mode_add,
+        import => \&mode_import,
+        edit   => \&mode_edit,
+        tag    => \&mode_tag,
+        search => \&mode_search,
+        open   => \&mode_open,
+        delete => \&mode_delete,
+    );
+
+    if ( exists $dispatch{$mode} ) {
+        $dispatch{$mode}->(@ARGV);
+    }
+    else {
+        die "$0: Unknown mode $mode\n";
+    }
 }
 
 sub mode_add {
@@ -310,6 +313,8 @@ sub normalize_url {
     $url->path('/')      if $url->path eq '';
     return $url;
 }
+
+main() if !caller;
 
 exit 0;
 
