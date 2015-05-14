@@ -31,7 +31,7 @@ if ( $config_file->exists ) {
     }
 }
 
-for (qw(title content url)) {
+for (qw(url)) {
     $base->child($_)->mkpath();
 }
 
