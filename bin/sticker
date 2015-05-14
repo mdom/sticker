@@ -71,7 +71,6 @@ sub mode_import {
 
 sub mode_delete {
     my ($arg) = @_;
-    # TODO Code duplication
     my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
