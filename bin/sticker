@@ -91,7 +91,8 @@ sub mode_edit {
     my $id   = b($url)->sha1_sum;
     my $file = $base->child('url')->child($id);
     if ( $file->exists ) {
-        system( 'vi', $file );
+        my $editor = $ENV{EDITOR} ? $ENV{EDITOR} : 'vi';
+        system( $editor , $file );
     }
     return;
 }
