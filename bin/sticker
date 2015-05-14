@@ -72,7 +72,7 @@ sub mode_import {
 sub mode_delete {
     my ($arg) = @_;
     # TODO Code duplication
-    my $url = number_to_url($arg);
+    my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
     $url = normalize_url($url);
@@ -86,7 +86,7 @@ sub mode_delete {
 
 sub mode_edit {
     my ($arg) = @_;
-    my $url = number_to_url($arg);
+    my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
     $url = normalize_url($url);
@@ -100,7 +100,7 @@ sub mode_edit {
 
 sub mode_tag {
     my ( $arg, @new_tags ) = @_;
-    my $url = number_to_url($arg);
+    my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
     $url = normalize_url($url);
@@ -111,7 +111,7 @@ sub mode_tag {
 
 sub mode_open {
     my $arg = shift;
-    my $url = number_to_url($arg);
+    my $url = to_url($arg);
     die "No url for $arg\n"
       if !$url;
     return system( @{ $config->{handler} }, $url );
@@ -133,9 +133,9 @@ sub mode_search {
     }
 }
 
-sub number_to_url {
     my $arg = shift;
     if ( $arg =~ /\d+/ ) {
+sub to_url {
         my $last_search = $base->child('mbm_last_search');
         if ( $last_search->exists ) {
             my @urls = $last_search->lines( { chomp => 1 } );
