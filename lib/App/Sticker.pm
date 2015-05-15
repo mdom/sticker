@@ -109,12 +109,7 @@ sub mode_delete {
     my $url = $self->to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    my $id   = b($url)->sha1_sum;
-    my $file = $self->base_dir->child('url')->child($id);
-    if ( $file->exists ) {
-        $file->remove();
-    }
-    return;
+    return $self->db->delete($url);
 }
 
 sub mode_edit {
