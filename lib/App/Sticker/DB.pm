@@ -37,7 +37,7 @@ sub get_key_hash {
     return b($string)->sha1_sum;
 }
 
-sub file_for_key {
+sub get_file {
     my ( $self, $key ) = @_;
     return $self->base_dir->child($key);
 }
