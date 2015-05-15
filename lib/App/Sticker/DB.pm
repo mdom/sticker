@@ -19,18 +19,12 @@ sub _parse_file {
     my $file = shift;
     my %attrs;
     if ( $file->exists ) {
-
         # TODO Line folding
         my $content = $file->slurp_utf8;
         %attrs = ( $content =~ /^(\S+?):\s*(.*)/gm );
     }
     return %attrs;
 }
-
-before [qw(get_file get delete set)] => sub {
-	$_[1] = $_[0]->get_key_hash($_[1]);
-	return;
-};
 
 sub get_key_hash {
     my ($self,$string) = @_;
@@ -39,12 +33,14 @@ sub get_key_hash {
 
 sub get_file {
     my ( $self, $key ) = @_;
-    return $self->base_dir->child($key);
+    my $hash = $self->get_key_hash($key);
+    return $self->base_dir->child($hash);
 }
 
 sub get {
     my ( $self, $key, @props ) = @_;
-    my %attrs = _parse_file( $self->base_dir->child($key) );
+    my $hash = $self->get_key_hash($key);
+    my %attrs = $self->_parse_file( $self->get_file($hash) );
     return @attrs{@props};
 }
 
@@ -55,8 +51,8 @@ sub delete {
 
 sub set {
     my ( $self, $key, %new_attrs ) = @_;
-    my $file  = $self->base_dir->child($key);
-    my %attrs = _parse_file( $self->base_dir->child($key) );
+    my $file  = $self->get_file($key);
+    my %attrs = $self->_parse_file( $file );
     %attrs = ( %attrs, %new_attrs );
 
     # TODO Line folding
