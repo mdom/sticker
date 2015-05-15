@@ -5,6 +5,7 @@ use warnings;
 use feature "state";
 use Moo;
 use Mojo::Collection 'c';
+use Mojo::ByteStream 'b';
 
 has base_dir => ( is => 'ro', required => 1);
 
@@ -26,8 +27,13 @@ sub _parse_file {
     return %attrs;
 }
 
-sub to_key {
-    my $string = shift;
+before [qw(get_file get delete set)] => sub {
+	$_[1] = $_[0]->get_key_hash($_[1]);
+	return;
+};
+
+sub get_key_hash {
+    my ($self,$string) = @_;
     return b($string)->sha1_sum;
 }
 

@@ -122,8 +122,7 @@ sub mode_edit {
     my $url = $self->to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    my $id   = b($url)->sha1_sum;
-    my $file = $self->base_dir->child('url')->child($id);
+    my $file = $self->db->get_file($url);
     if ( $file->exists ) {
         my $editor = $ENV{EDITOR} ? $ENV{EDITOR} : 'vi';
         system( $editor , $file );
@@ -137,9 +136,8 @@ sub mode_tag {
     my $url = $self->to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    my $id = b($url)->sha1_sum;
-    my @old_tags = b( $self->db->get( $id, 'tag' ) )->split(' ');
-    return $self->db->set( $self->base_dir, $id, 'tag',
+    my @old_tags = b( $self->db->get( $url, 'tag' ) )->split(' ');
+    return $self->db->set( $self->base_dir, $url, 'tag',
         c( @old_tags, @new_tags )->uniq );
 }
 
