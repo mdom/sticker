@@ -10,7 +10,6 @@ has base_dir => ( is => 'ro', required => 1);
 
 sub create {
     my ($self) = @_;
-    $DB::single = 1;
     $self->base_dir->mkpath();
     return;
 }
