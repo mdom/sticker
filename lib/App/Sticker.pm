@@ -132,8 +132,7 @@ sub mode_tag {
     die "No url for $arg\n"
       if !$url;
     my @old_tags = b( $self->db->get( $url, 'tag' ) )->split(' ');
-    return $self->db->set( $self->base_dir, $url, 'tag',
-        c( @old_tags, @new_tags )->uniq );
+    return $self->db->set( $url, 'tag', c( @old_tags, @new_tags )->uniq );
 }
 
 sub mode_open {
@@ -230,10 +229,9 @@ sub process_tx {
                 warn "No words for $url\n";
             }
         }
-        my $id = b($url)->sha1_sum;
 
         $self->db->set(
-            $id,
+            $url,
             title   => $title   || '',
             content => $content || '',
             url     => $url
