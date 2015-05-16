@@ -1,6 +1,6 @@
 package App::Sticker;
 
-# ABSTRACT: manage bookmarking on console
+# ABSTRACT: Bookmark manager for the command line 
 
 use strict;
 use warnings;
