@@ -16,7 +16,7 @@ sub create {
 }
 
 sub _parse_file {
-    my $file = shift;
+    my ( $self, $file ) = @_;
     my %attrs;
     if ( $file->exists ) {
         # TODO Line folding
@@ -39,8 +39,7 @@ sub get_file {
 
 sub get {
     my ( $self, $key, @props ) = @_;
-    my $hash = $self->get_key_hash($key);
-    my %attrs = $self->_parse_file( $self->get_file($hash) );
+    my %attrs = $self->_parse_file( $self->get_file($key) );
     return @attrs{@props};
 }
 
@@ -62,17 +61,14 @@ sub set {
 
 sub search {
     my ( $self, $props, $term ) = @_;
-    local ( @ARGV, $_ ) = $self->base_dir->children;
-    return if !@ARGV;
     my @matches;
-    while (<>) {
-        s/^(\S+?):\s+//;
-        if (/$term/o) {
-            push @matches, $ARGV;
-            close ARGV;
-            next;
+    for my $file ( $self->base_dir->children ) {
+        my %attrs = $self->_parse_file( $file );
+        my $values = join( ' ', values %attrs );
+        if ( $values =~ /$term/o ) {
+            push @matches, $attrs{url};
         }
     }
-    return c(@matches)->map('basename')->uniq->to_array;
+    return @matches;
 }
 1;

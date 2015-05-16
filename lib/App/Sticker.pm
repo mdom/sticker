@@ -154,14 +154,14 @@ sub mode_open {
 sub mode_search {
     my $self    = shift;
     my @terms   = @_ ? @_ : '';
-    my $matches = $self->db->search( [qw(title url content)], $terms[0] );
+    my @matches = $self->db->search( [qw(title url content)], $terms[0] );
     my $hist_fh = $self->base_dir->child('mbm_last_search')->openw_utf8();
 
     my $i   = 0;
-    my $len = length(@$matches);
-    for my $id (@$matches) {
-        my $url   = $self->db->get( $id, 'url' );
-        my $title = $self->db->get( $id, 'title' );
+    my $len = length(@matches);
+    for my $url (@matches) {
+        my $url   = $self->db->get( $url, 'url' );
+        my $title = $self->db->get( $url, 'title' );
         my $line = sprintf( "%*d $url - $title", $len, ++$i );
         print b($line)->encode . "\n";
         print {$hist_fh} "$url\n";
