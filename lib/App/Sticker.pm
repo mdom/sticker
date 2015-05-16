@@ -1,5 +1,7 @@
 package App::Sticker;
 
+# ABSTRACT: manage bookmarking on console
+
 use strict;
 use warnings;
 use feature "state";
@@ -13,6 +15,8 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Path::Tiny;
 use Moo;
+
+our $VERSION = '0.01';
 
 has db       => ( is => 'lazy' );
 has config   => ( is => 'lazy' );
