@@ -83,7 +83,10 @@ sub run {
         delete => \&mode_delete,
     );
 
-    if ( exists $dispatch{$mode} ) {
+    if ( !$mode ) {
+        die "Usage: $0 \$MODE\n";
+    }
+    elsif ( exists $dispatch{$mode} ) {
         my $sub = $dispatch{$mode};
         $self->$sub(@_);
     }
