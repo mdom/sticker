@@ -167,7 +167,7 @@ sub mode_search {
 
 sub to_url {
     my ( $self, $url ) = @_;
-    if ( $url =~ /\d+/ ) {
+    if ( $url =~ /^\d+$/ ) {
         my $last_search = $self->base_dir->child('mbm_last_search');
         if ( $last_search->exists ) {
             my @urls = $last_search->lines( { chomp => 1 } );
