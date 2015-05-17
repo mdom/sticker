@@ -47,7 +47,6 @@ sub find {
 }
 
 sub set {
-	$DB::single=1;
     my ( $self, $key, %new_attrs ) = @_;
     my @order = qw( url title content );
     my ($index, $row) = $self->find($key);
