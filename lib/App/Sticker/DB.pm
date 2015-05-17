@@ -19,7 +19,7 @@ sub _build_tied_array {
 sub get {
     my ( $self, $key, @props ) = @_;
     my @order = qw( url title content );
-    my $row = $self->find($key);
+    my ($index, $row) = $self->find($key);
     if ($row) {
 	    my %attrs;
 	    @attrs{@order} = @$row;
@@ -29,14 +29,18 @@ sub get {
 
 sub delete {
     my ( $self, $key ) = @_;
-    return $self->get_file($key)->remove();
+    my ($index, $row ) = $self->find($key);
+    if ( $row ) {
+	    delete $self->tied_array->[$index];
+    }
+    return;
 }
 
 sub find {
 	my ($self,$key) = @_;
-	foreach my $row ( @{$self->tied_array} ) {
+	while  ( my ($index, $row) = each @{$self->tied_array} ) {
 		if ($key eq $row->[0] ) {
-			return $row;
+			return $index, $row;
 		}
 	}
 	return;
@@ -46,7 +50,7 @@ sub set {
 	$DB::single=1;
     my ( $self, $key, %new_attrs ) = @_;
     my @order = qw( url title content );
-    my $row = $self->find($key);
+    my ($index, $row) = $self->find($key);
     if ($row) {
 	    my %attrs;
 	    @attrs{@order} = @$row;
