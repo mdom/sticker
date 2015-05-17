@@ -6,58 +6,89 @@ use feature "state";
 use Moo;
 use Mojo::Collection 'c';
 use Mojo::ByteStream 'b';
-use Tie::Array::CSV;
+use Text::CSV;
+use FileHandle;
 
-has file_name => ( is => 'ro', required => 1);
-has tied_array => ( is => 'lazy' );
+has file_name => ( is => 'ro', required => 1 );
+has csv       => ( is => 'lazy' );
+has columns   => ( is => 'lazy' );
 
-sub _build_tied_array {
-	my $self = shift;
-	return Tie::Array::CSV->new( $self->file_name, text_csv => { binary => 1 });
+sub fh {
+    my ($self,$mode) = @_;
+    open( my $fh, "$mode:encoding(utf8)", $self->file_name )
+    	or die "Can't open database file " . $self->file_name . ": $!\n";
+    return $fh;
+}
+
+sub _build_csv {
+    my $self = shift;
+    my $csv = Text::CSV->new( { binary => 1, eol => $/ } );
+    $csv->column_names( $self->columns );
+    return $csv;
+}
+
+sub _build_columns {
+    return [qw( url title content )];
 }
 
 sub get {
     my ( $self, $key, @props ) = @_;
     my @order = qw( url title content );
-    my ($index, $row) = $self->find($key);
-    if ($row) {
-	    my %attrs;
-	    @attrs{@order} = @$row;
+    my $attrs = $self->find($key);
+    if ($attrs) {
+        return @{$attrs}{@props};
     }
     return;
 }
 
+
 sub delete {
-    my ( $self, $key ) = @_;
-    my ($index, $row ) = $self->find($key);
-    if ( $row ) {
-	    delete $self->tied_array->[$index];
+    my ( $self,  $key ) = @_;
+    my $attrs = $self->find($key);
+    if ($attrs) {
+	my $old_fh = $self->fh('<');
+	unlink($self->file_name);
+	my $new_fh = $self->fh('>');
+        while ( my $hr = $self->csv->getline_hr( $old_fh ) ) {
+            if ( $key ne $hr->{url} ) {
+                $self->csv->print_hr( $new_fh, $hr );
+            }
+	}
     }
     return;
 }
 
 sub find {
-	my ($self,$key) = @_;
-	while  ( my ($index, $row) = each @{$self->tied_array} ) {
-		if ($key eq $row->[0] ) {
-			return $index, $row;
-		}
-	}
-	return;
+    my ( $self, $key ) = @_;
+    my $fh = $self->fh('<');
+    while ( my $hr = $self->csv->getline_hr( $fh ) ) {
+        if ( $key eq $hr->{url} ) {
+            return $hr;
+        }
+    }
+    return;
 }
 
 sub set {
     my ( $self, $key, %new_attrs ) = @_;
     my @order = qw( url title content );
-    my ($index, $row) = $self->find($key);
-    if ($row) {
-	    my %attrs;
-	    @attrs{@order} = @$row;
-	    %attrs = ( %attrs, %new_attrs );
-	    $row = @attrs{@order};
+    my $attrs = $self->find($key);
+    if ($attrs) {
+	my $old_fh = $self->fh('<');
+	unlink($self->file_name);
+	my $new_fh = $self->fh('>');
+        while ( my $hr = $self->csv->getline_hr( $old_fh ) ) {
+            if ( $key eq $hr->{url} ) {
+                $self->csv->print_hr( $new_fh, { %$hr, %new_attrs } );
+            }
+            else {
+                $self->csv->print_hr( $new_fh , $hr );
+            }
+        }
     }
     else {
-	    push @{$self->tied_array}, [ map { b($_)->encode } @new_attrs{@order} ]
+        my $fh = $self->fh('>>');
+        $self->csv->print_hr( $fh, \%new_attrs );
     }
     return;
 }
@@ -65,13 +96,11 @@ sub set {
 sub search {
     my ( $self, $props, $term ) = @_;
     my @matches;
-    for my $row ( @{$self->tied_array} ) {
-    my @order = qw( url title content );
-        my $values = join( ' ', @$row );
+    my $fh = $self->fh('<');
+    while ( my $hr = $self->csv->getline_hr( $self->fh ) ) {
+        my $values = join( ' ', values %$hr );
         if ( $values =~ /$term/o ) {
-	    my %attrs;
-	    @attrs{@order} = @$row;
-            push @matches, \%attrs;
+            push @matches, $hr;
         }
     }
     return @matches;
