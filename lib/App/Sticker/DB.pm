@@ -6,41 +6,25 @@ use feature "state";
 use Moo;
 use Mojo::Collection 'c';
 use Mojo::ByteStream 'b';
+use Tie::Array::CSV;
 
-has base_dir => ( is => 'ro', required => 1);
+has file_name => ( is => 'ro', required => 1);
+has tied_array => ( is => 'lazy' );
 
-sub create {
-    my ($self) = @_;
-    $self->base_dir->mkpath();
-    return;
-}
-
-sub _parse_file {
-    my ( $self, $file ) = @_;
-    my %attrs;
-    if ( $file->exists ) {
-        # TODO Line folding
-        my $content = $file->slurp_utf8;
-        %attrs = ( $content =~ /^(\S+?):\s*(.*)/gm );
-    }
-    return %attrs;
-}
-
-sub get_key_hash {
-    my ($self,$string) = @_;
-    return b($string)->sha1_sum;
-}
-
-sub get_file {
-    my ( $self, $key ) = @_;
-    my $hash = $self->get_key_hash($key);
-    return $self->base_dir->child($hash);
+sub _build_tied_array {
+	my $self = shift;
+	return Tie::Array::CSV->new( $self->file_name, text_csv => { binary => 1 });
 }
 
 sub get {
     my ( $self, $key, @props ) = @_;
-    my %attrs = $self->_parse_file( $self->get_file($key) );
-    return @attrs{@props};
+    my @order = qw( url title content );
+    my $row = $self->find($key);
+    if ($row) {
+	    my %attrs;
+	    @attrs{@order} = @$row;
+    }
+    return;
 }
 
 sub delete {
@@ -48,25 +32,43 @@ sub delete {
     return $self->get_file($key)->remove();
 }
 
-sub set {
-    my ( $self, $key, %new_attrs ) = @_;
-    my $file  = $self->get_file($key);
-    my %attrs = $self->_parse_file( $file );
-    %attrs = ( %attrs, %new_attrs );
+sub find {
+	my ($self,$key) = @_;
+	foreach my $row ( @{$self->tied_array} ) {
+		if ($key eq $row->[0] ) {
+			return $row;
+		}
+	}
+	return;
+}
 
-    # TODO Line folding
-    return $file->spew_utf8(
-        join( "\n", map { $_ . ': ' . $attrs{$_} } keys %attrs ) );
+sub set {
+	$DB::single=1;
+    my ( $self, $key, %new_attrs ) = @_;
+    my @order = qw( url title content );
+    my $row = $self->find($key);
+    if ($row) {
+	    my %attrs;
+	    @attrs{@order} = @$row;
+	    %attrs = ( %attrs, %new_attrs );
+	    $row = @attrs{@order};
+    }
+    else {
+	    push @{$self->tied_array}, [ map { b($_)->encode } @new_attrs{@order} ]
+    }
+    return;
 }
 
 sub search {
     my ( $self, $props, $term ) = @_;
     my @matches;
-    for my $file ( $self->base_dir->children ) {
-        my %attrs = $self->_parse_file( $file );
-        my $values = join( ' ', values %attrs );
+    for my $row ( @{$self->tied_array} ) {
+    my @order = qw( url title content );
+        my $values = join( ' ', @$row );
         if ( $values =~ /$term/o ) {
-            push @matches, $attrs{url};
+	    my %attrs;
+	    @attrs{@order} = @$row;
+            push @matches, \%attrs;
         }
     }
     return @matches;

@@ -46,7 +46,7 @@ sub _build_config {
     );
 
     my $config_file = $self->base_dir->child('config');
-    my $config;
+    my $config = \%default_config;
     if ( $config_file->exists ) {
         my $json = eval { decode_json( $config_file->slurp_utf8 ) };
         if ($json) {
@@ -58,8 +58,7 @@ sub _build_config {
 
 sub _build_db {
     my $self = shift;
-    my $db = App::Sticker::DB->new( base_dir => $self->base_dir->child('url') );
-    $db->create();
+    my $db = App::Sticker::DB->new( file_name => "foo.db" );
     return $db;
 }
 
@@ -159,12 +158,10 @@ sub mode_search {
 
     my $i   = 0;
     my $len = length(@matches);
-    for my $url (@matches) {
-        my $url   = $self->db->get( $url, 'url' );
-        my $title = $self->db->get( $url, 'title' );
-        my $line = sprintf( "%*d $url - $title", $len, ++$i );
+    for my $attrs (@matches) {
+        my $line = sprintf( "%*d %s - %s ", $len, ++$i, @{$attrs}{qw(url title)} );
         print b($line)->encode . "\n";
-        print {$hist_fh} "$url\n";
+	# print {$hist_fh} "$url\n";
     }
 }
 
