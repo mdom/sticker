@@ -58,7 +58,7 @@ sub _build_config {
 
 sub _build_db {
     my $self = shift;
-    my $db = App::Sticker::DB->new( file_name => "foo.db" );
+    my $db = App::Sticker::DB->new( file_name => $self->base_dir->child('db.csv');
     return $db;
 }
 
