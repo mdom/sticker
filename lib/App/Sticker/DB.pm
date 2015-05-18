@@ -113,7 +113,7 @@ sub search {
     my ( $self, $props, $term ) = @_;
     my @matches;
     my $fh = $self->fh('<');
-    while ( my $hr = $self->csv->getline_hr( $self->fh ) ) {
+    while ( my $hr = $self->csv->getline_hr( $fh ) ) {
         my $values = join( ' ', values %$hr );
         if ( $values =~ /$term/o ) {
             push @matches, $hr;
