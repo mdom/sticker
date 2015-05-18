@@ -207,8 +207,8 @@ sub process_tx {
     my ( $tx, $url ) = @_;
     if ( my $res = $tx->success ) {
         my ( $title, $content );
-        my $dom = $res->dom;
-        if ($dom) {
+        if ($res->headers->content_type =~ 'text/html') {
+	    my $dom = $res->dom;
             $title = $dom->at('title');
             if ($title) {
                 $title = b( $title->all_text() )->squish;
