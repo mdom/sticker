@@ -16,7 +16,7 @@ has columns   => ( is => 'lazy' );
 sub fh {
     my ($self,$mode) = @_;
     open( my $fh, "$mode:encoding(utf8)", $self->file_name )
-    	or die "Can't open database file " . $self->file_name . ": $!\n";
+      or die "Can't open database file " . $self->file_name . ": $!\n";
     return $fh;
 }
 
@@ -41,19 +41,35 @@ sub get {
     return;
 }
 
+sub edit_inplace {
+    my ( $self, $mod_sub ) = @_;
+    my $file = $self->file_name;
+    rename( $file, "$file.bak" ) or die "Can't move $file to $file.bak: $!\n";
+    open( my $old_fh, '<:encoding(utf8)', "$file.bak" )
+      or die "Can't open $file.bak: $!\n";
+    my $new_fh = $self->fh('>');
+    while ( my $hr = $self->csv->getline_hr($old_fh) ) {
+        $hr = $mod_sub->($hr);
+        if ( defined $hr ) {
+            $self->csv->print_hr( $new_fh, $hr );
+        }
+    }
+    return;
+}
 
 sub delete {
-    my ( $self,  $key ) = @_;
+    my ( $self, $key ) = @_;
     my $attrs = $self->find($key);
     if ($attrs) {
-	my $old_fh = $self->fh('<');
-	unlink($self->file_name);
-	my $new_fh = $self->fh('>');
-        while ( my $hr = $self->csv->getline_hr( $old_fh ) ) {
-            if ( $key ne $hr->{url} ) {
-                $self->csv->print_hr( $new_fh, $hr );
+        $self->edit_inplace(
+            sub {
+                my $hr = shift;
+                if ( $key ne $hr->{url} ) {
+                    return $hr;
+                }
+                return;
             }
-	}
+        );
     }
     return;
 }
@@ -61,7 +77,7 @@ sub delete {
 sub find {
     my ( $self, $key ) = @_;
     my $fh = $self->fh('<');
-    while ( my $hr = $self->csv->getline_hr( $fh ) ) {
+    while ( my $hr = $self->csv->getline_hr($fh) ) {
         if ( $key eq $hr->{url} ) {
             return $hr;
         }
@@ -74,17 +90,15 @@ sub set {
     my @order = qw( url title content );
     my $attrs = $self->find($key);
     if ($attrs) {
-	my $old_fh = $self->fh('<');
-	unlink($self->file_name);
-	my $new_fh = $self->fh('>');
-        while ( my $hr = $self->csv->getline_hr( $old_fh ) ) {
-            if ( $key eq $hr->{url} ) {
-                $self->csv->print_hr( $new_fh, { %$hr, %new_attrs } );
+        $self->edit_inplace(
+            sub {
+                my $hr = shift;
+                if ( $key eq $hr->{url} ) {
+                    return { %$hr, %new_attrs };
+                }
+                return $hr;
             }
-            else {
-                $self->csv->print_hr( $new_fh , $hr );
-            }
-        }
+        );
     }
     else {
         my $fh = $self->fh('>>');
