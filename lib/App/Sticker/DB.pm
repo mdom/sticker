@@ -8,13 +8,15 @@ use Mojo::Collection 'c';
 use Mojo::ByteStream 'b';
 use Text::CSV;
 use FileHandle;
+use Path::Tiny;
 
 has file_name => ( is => 'ro', required => 1 );
 has csv       => ( is => 'lazy' );
 has columns   => ( is => 'lazy' );
 
 sub fh {
-    my ($self,$mode) = @_;
+    my ( $self, $mode ) = @_;
+    path($self->file_name)->touch();
     open( my $fh, "$mode:encoding(utf8)", $self->file_name )
       or die "Can't open database file " . $self->file_name . ": $!\n";
     return $fh;
