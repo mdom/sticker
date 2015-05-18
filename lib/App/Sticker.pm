@@ -64,7 +64,7 @@ sub _build_db {
 
 sub _build_base_dir {
     my $self     = shift;
-    my $base_dir = path('~/.mbm/');
+    my $base_dir = path('~/.sticker/');
     $base_dir->mkpath();
     return $base_dir;
 }
@@ -154,7 +154,7 @@ sub mode_search {
     my $self    = shift;
     my @terms   = @_ ? @_ : '';
     my @matches = $self->db->search( [qw(title url content)], $terms[0] );
-    my $hist_fh = $self->base_dir->child('mbm_last_search')->openw_utf8();
+    my $hist_fh = $self->base_dir->child('last_search')->openw_utf8();
 
     my $i   = 0;
     my $len = length(@matches);
@@ -168,7 +168,7 @@ sub mode_search {
 sub to_url {
     my ( $self, $url ) = @_;
     if ( $url =~ /^\d+$/ ) {
-        my $last_search = $self->base_dir->child('mbm_last_search');
+        my $last_search = $self->base_dir->child('last_search');
         if ( $last_search->exists ) {
             my @urls = $last_search->lines( { chomp => 1 } );
             $url = $urls[ $url - 1 ];
