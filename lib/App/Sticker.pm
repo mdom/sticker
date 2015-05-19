@@ -96,8 +96,8 @@ sub run {
 }
 
 sub mode_add {
-    my ( $self, $url ) = @_;
-    $self->add_urls( [$url] );
+    my ( $self, @urls ) = @_;
+    $self->add_urls( \@urls );
 }
 
 sub mode_import {
