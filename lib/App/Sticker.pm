@@ -111,11 +111,11 @@ sub mode_import {
 }
 
 sub mode_delete {
-    my ( $self, $arg ) = @_;
-    my $url = $self->to_url($arg);
-    die "No url for $arg\n"
-      if !$url;
-    return $self->db->delete($url);
+    my ( $self, @urls ) = @_;
+    @urls = $self->to_url(@urls);
+    die "No urls for @urls\n"
+      if !@urls;
+    return $self->db->delete(@urls);
 }
 
 sub mode_edit {
