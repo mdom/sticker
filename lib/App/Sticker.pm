@@ -166,16 +166,20 @@ sub mode_search {
 }
 
 sub to_url {
-    my ( $self, $url ) = @_;
-    if ( $url =~ /^\d+$/ ) {
-        my $last_search = $self->base_dir->child('last_search');
-        if ( $last_search->exists ) {
-            my @urls = $last_search->lines( { chomp => 1 } );
-            $url = $urls[ $url - 1 ];
+    my ( $self, @urls ) = @_;
+    my @normalized_urls;
+    for my $url (@urls) {
+        if ( $url =~ /^\d+$/ ) {
+            my $last_search = $self->base_dir->child('last_search');
+            if ( $last_search->exists ) {
+                my @urls = $last_search->lines( { chomp => 1 } );
+                $url = $urls[ $url - 1 ];
+            }
         }
+        $url = $self->normalize_url($url);
+        push @normalize_urls, $url;
     }
-    $url = $self->normalize_url($url);
-    return $url;
+    return @normalized_urls;
 }
 
 sub add_urls {
