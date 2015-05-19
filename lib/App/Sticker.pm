@@ -142,12 +142,15 @@ sub mode_tag {
 }
 
 sub mode_open {
-    my $self = shift;
-    my $arg  = shift;
-    my $url  = $self->to_url($arg);
-    die "No url for $arg\n"
-      if !$url;
-    return system( @{ $self->config->{handler} }, $url );
+    my ( $self, @urls ) = @_;
+    @urls = $self->to_url(@urls);
+    die "No urls for @urls\n"
+      if !@urls;
+    for my $url (@urls) {
+        system( @{ $self->config->{handler} }, $url ) == 0
+          or warn "Error calling @{ $self->config->{handler} } $url: $!\n";
+    }
+    return;
 }
 
 sub mode_search {
