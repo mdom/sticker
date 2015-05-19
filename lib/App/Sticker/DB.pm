@@ -60,19 +60,17 @@ sub edit_inplace {
 }
 
 sub delete {
-    my ( $self, $key ) = @_;
-    my $attrs = $self->find($key);
-    if ($attrs) {
-        $self->edit_inplace(
-            sub {
-                my $hr = shift;
-                if ( $key ne $hr->{url} ) {
-                    return $hr;
-                }
-                return;
+    my ( $self, @keys ) = @_;
+    my %key_index = map { $_ => 1 } @keys;
+    $self->edit_inplace(
+        sub {
+            my $hr = shift;
+            if ( not exists $key_index{ $hr->{url} } ) {
+                return $hr;
             }
-        );
-    }
+            return;
+        }
+    );
     return;
 }
 
