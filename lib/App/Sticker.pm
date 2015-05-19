@@ -177,7 +177,7 @@ sub to_url {
             }
         }
         $url = $self->normalize_url($url);
-        push @normalize_urls, $url;
+        push @normalized_urls, $url;
     }
     return @normalized_urls;
 }
