@@ -155,7 +155,7 @@ sub mode_open {
 
 sub mode_search {
     my $self    = shift;
-    my @matches = $self->db->search( $_[0] );
+    my @matches = $self->db->search( @_ );
     my $hist_fh = $self->base_dir->child('last_search')->openw_utf8();
 
     my $i   = 0;
