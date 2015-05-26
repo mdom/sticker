@@ -111,13 +111,40 @@ sub set {
 sub search {
     my ( $self, $term ) = @_;
     my @matches;
-    my $fh = $self->fh('<');
-    while ( my $hr = $self->csv->getline_hr( $fh ) ) {
-        my $values = join( ' ', values %$hr );
-        if ( $values =~ /$term/o ) {
+    my $matcher = $self->compile_search($term);
+    my $fh      = $self->fh('<');
+    while ( my $hr = $self->csv->getline_hr($fh) ) {
+        if ( $matcher->($hr) ) {
             push @matches, $hr;
         }
     }
     return @matches;
 }
+
+sub compile_search {
+    my ( $self, @terms ) = @_;
+    my $sub = 'sub { my $hr = shift;';
+    for (@terms) {
+        if (/[()]/) {
+            $sub .= " $_ ";
+        }
+        elsif (/or|and/i) {
+            $sub .= " " . lc . " ";
+        }
+        elsif (/([^:]+):(.*)/) {
+            $sub .= qq{ \$hr->{$1} =~ q{$2} };
+        }
+        else {
+            die "Parse error (unknown token): $_\n";
+        }
+    }
+    $sub .= '}';
+    my $matcher = eval $sub;
+    if ($@) {
+            die "Compile error: $@\n";
+    }
+    return $matcher;
+}
+
+
 1;
