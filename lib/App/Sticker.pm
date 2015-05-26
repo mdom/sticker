@@ -155,8 +155,7 @@ sub mode_open {
 
 sub mode_search {
     my $self    = shift;
-    my @terms   = @_ ? @_ : '';
-    my @matches = $self->db->search( [qw(title url content)], $terms[0] );
+    my @matches = $self->db->search( $ARGV[0] );
     my $hist_fh = $self->base_dir->child('last_search')->openw_utf8();
 
     my $i   = 0;

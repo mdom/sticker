@@ -108,7 +108,7 @@ sub set {
 }
 
 sub search {
-    my ( $self, $props, $term ) = @_;
+    my ( $self, $term ) = @_;
     my @matches;
     my $fh = $self->fh('<');
     while ( my $hr = $self->csv->getline_hr( $fh ) ) {
