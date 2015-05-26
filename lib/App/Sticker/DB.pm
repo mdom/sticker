@@ -6,7 +6,6 @@ use feature "state";
 use open ':encoding(utf8)';
 use Moo;
 use Mojo::Collection 'c';
-use Mojo::ByteStream 'b';
 use Text::CSV;
 use FileHandle;
 use Path::Tiny;
