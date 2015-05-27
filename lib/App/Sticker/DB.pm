@@ -3,9 +3,9 @@ package App::Sticker::DB;
 use strict;
 use warnings;
 use feature "state";
-use open ':encoding(utf8)';
 use Moo;
 use Mojo::Collection 'c';
+use Mojo::ByteStream 'b';
 use Text::CSV;
 use FileHandle;
 use Path::Tiny;
@@ -17,7 +17,7 @@ has columns   => ( is => 'lazy' );
 sub fh {
     my ( $self, $mode ) = @_;
     path($self->file_name)->touch();
-    open( my $fh, $mode, $self->file_name )
+    open( my $fh, "$mode:raw", $self->file_name )
       or die "Can't open database file " . $self->file_name . ": $!\n";
     return $fh;
 }
@@ -47,12 +47,14 @@ sub edit_inplace {
     my ( $self, $mod_sub ) = @_;
     my $file = $self->file_name;
     rename( $file, "$file.bak" ) or die "Can't move $file to $file.bak: $!\n";
-    open( my $old_fh, '<', "$file.bak" )
+    open( my $old_fh, '<:raw', "$file.bak" )
       or die "Can't open $file.bak: $!\n";
     my $new_fh = $self->fh('>');
     while ( my $hr = $self->csv->getline_hr($old_fh) ) {
+	$hr = { map { b($_)->decode } %$hr };
         $hr = $mod_sub->($hr);
         if ( defined $hr ) {
+	    $hr = { map { b($_)->encode } %$hr };
             $self->csv->print_hr( $new_fh, $hr );
         }
     }
@@ -102,7 +104,9 @@ sub set {
     }
     else {
         my $fh = $self->fh('>>');
-        $self->csv->print_hr( $fh, \%new_attrs );
+	my $hr = \%new_attrs;
+	$hr = { map { b($_)->encode() } %$hr };
+        $self->csv->print_hr( $fh, $hr );
     }
     return;
 }
