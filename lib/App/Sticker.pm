@@ -1,6 +1,6 @@
 package App::Sticker;
 
-# ABSTRACT: Bookmark manager for the command line 
+# ABSTRACT: Bookmark manager for the command line
 
 use strict;
 use warnings;
@@ -46,7 +46,7 @@ sub _build_config {
     );
 
     my $config_file = $self->base_dir->child('config');
-    my $config = \%default_config;
+    my $config      = \%default_config;
     if ( $config_file->exists ) {
         my $json = eval { decode_json( $config_file->slurp_utf8 ) };
         if ($json) {
@@ -58,8 +58,7 @@ sub _build_config {
 
 sub _build_db {
     my $self = shift;
-    my $db = App::Sticker::DB->new( file_name => $self->base_dir->child('db.csv'));
-    return $db;
+    return App::Sticker::DB->new( dir_name => $self->base_dir->child('db') );
 }
 
 sub _build_base_dir {
@@ -155,15 +154,17 @@ sub mode_open {
 
 sub mode_search {
     my $self    = shift;
-    my @matches = $self->db->search( @_ );
+    my @matches = $self->db->search(@_);
     my $hist_fh = $self->base_dir->child('last_search')->openw_utf8();
 
     my $i   = 0;
     my $len = length(@matches);
     for my $attrs (@matches) {
-        my $line = sprintf( "%*d %s - %s ", $len, ++$i, @{$attrs}{qw(url title)} );
+        my $line =
+          sprintf( "%*d %s - %s ", $len, ++$i, @{$attrs}{qw(url title)} );
         print b($line)->encode . "\n";
-	# print {$hist_fh} "$url\n";
+
+        # print {$hist_fh} "$url\n";
     }
 }
 
@@ -210,11 +211,11 @@ sub add_urls {
 
 sub process_tx {
     my $self = shift;
-    my ( $tx, $url ) = @_;
+    my ( $tx, $url, $result ) = @_;
     if ( my $res = $tx->success ) {
         my ( $title, $content );
-        if ($res->headers->content_type =~ 'text/html') {
-	    my $dom = $res->dom;
+        if ( $res->headers->content_type =~ 'text/html' ) {
+            my $dom = $res->dom;
             $title = $dom->at('title');
             if ($title) {
                 $title = b( $title->all_text() )->squish;
@@ -241,10 +242,11 @@ sub process_tx {
         }
 
         $self->db->set(
-            $url,
-            title   => $title   || '',
-            content => $content || '',
-            url     => $url
+            {
+                title   => $title   || '',
+                content => $content || '',
+                url     => $url,
+            }
         );
 
     }

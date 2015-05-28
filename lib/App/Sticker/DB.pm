@@ -2,123 +2,67 @@ package App::Sticker::DB;
 
 use strict;
 use warnings;
-use feature "state";
 use Moo;
-use Mojo::Collection 'c';
 use Mojo::ByteStream 'b';
-use Text::CSV;
-use FileHandle;
 use Path::Tiny;
+use JSON::MaybeXS;
 
-has file_name => ( is => 'ro', required => 1 );
-has csv       => ( is => 'lazy' );
-has columns   => ( is => 'lazy' );
+has dir_name => ( is => 'ro', required => 1 );
+has dir      => ( is => 'lazy' );
+has json     => ( is => 'lazy' );
 
-sub fh {
-    my ( $self, $mode ) = @_;
-    path($self->file_name)->touch();
-    open( my $fh, "$mode:raw", $self->file_name )
-      or die "Can't open database file " . $self->file_name . ": $!\n";
-    return $fh;
+sub Mojo::URL::TO_JSON {
+    shift->to_string;
 }
 
-sub _build_csv {
+sub Mojo::ByteStream::TO_JSON {
+    my $stream = shift;
+    return $stream->to_string;
+}
+
+sub _build_json {
+    my $json = JSON::MaybeXS->new( pretty => 1, convert_blessed => 1 );
+    return $json;
+}
+
+sub _build_dir {
     my $self = shift;
-    my $csv = Text::CSV->new( { binary => 1, eol => $/ } );
-    $csv->column_names( $self->columns );
-    return $csv;
-}
-
-sub _build_columns {
-    return [qw( url title content )];
+    my $dir  = path( $self->dir_name );
+    $dir->mkpath();
+    return $dir;
 }
 
 sub get {
-    my ( $self, $key, @props ) = @_;
-    my @order = qw( url title content );
-    my $attrs = $self->find($key);
-    if ($attrs) {
-        return @{$attrs}{@props};
-    }
-    return;
-}
-
-sub edit_inplace {
-    my ( $self, $mod_sub ) = @_;
-    my $file = $self->file_name;
-    rename( $file, "$file.bak" ) or die "Can't move $file to $file.bak: $!\n";
-    open( my $old_fh, '<:raw', "$file.bak" )
-      or die "Can't open $file.bak: $!\n";
-    my $new_fh = $self->fh('>');
-    while ( my $hr = $self->csv->getline_hr($old_fh) ) {
-	$hr = { map { b($_)->decode } %$hr };
-        $hr = $mod_sub->($hr);
-        if ( defined $hr ) {
-	    $hr = { map { b($_)->encode } %$hr };
-            $self->csv->print_hr( $new_fh, $hr );
-        }
-    }
-    return;
-}
-
-sub delete {
-    my ( $self, @keys ) = @_;
-    my %key_index = map { $_ => 1 } @keys;
-    $self->edit_inplace(
-        sub {
-            my $hr = shift;
-            if ( not exists $key_index{ $hr->{url} } ) {
-                return $hr;
-            }
-            return;
-        }
-    );
-    return;
-}
-
-sub find {
     my ( $self, $key ) = @_;
-    my $fh = $self->fh('<');
-    while ( my $hr = $self->csv->getline_hr($fh) ) {
-        if ( $key eq $hr->{url} ) {
-            return $hr;
-        }
+    $key = b($key)->sha1_sum;
+    my $doc;
+    my $file = $self->dir->child($key);
+    if ( $file->exists ) {
+        $doc = $self->json->decode( $file->slurp_utf8 );
     }
-    return;
+    return $doc;
 }
 
 sub set {
-    my ( $self, $key, %new_attrs ) = @_;
-    my @order = qw( url title content );
-    my $attrs = $self->find($key);
-    if ($attrs) {
-        $self->edit_inplace(
-            sub {
-                my $hr = shift;
-                if ( $key eq $hr->{url} ) {
-                    return { %$hr, %new_attrs };
-                }
-                return $hr;
-            }
-        );
+    my ( $self, $doc ) = @_;
+    my $key;
+    if ( exists $doc->{url} ) {
+        $key = b( $doc->{url} )->sha1_sum;
     }
     else {
-        my $fh = $self->fh('>>');
-	my $hr = \%new_attrs;
-	$hr = { map { b($_)->encode() } %$hr };
-        $self->csv->print_hr( $fh, $hr );
+        return;
     }
-    return;
+    return $self->dir->child($key)->spew_utf8( $self->json->encode($doc) );
 }
 
 sub search {
     my ( $self, $term ) = @_;
     my @matches;
     my $matcher = $self->compile_search($term);
-    my $fh      = $self->fh('<');
-    while ( my $hr = $self->csv->getline_hr($fh) ) {
-        if ( $matcher->($hr) ) {
-            push @matches, $hr;
+    for my $file ( $self->dir->children ) {
+        my $doc = $self->json->decode( $file->slurp_utf8 );
+        if ( $matcher->($doc) ) {
+            push @matches, $doc;
         }
     }
     return @matches;
@@ -144,10 +88,9 @@ sub compile_search {
     $sub .= '}';
     my $matcher = eval $sub;
     if ($@) {
-            die "Compile error: $@\n";
+        die "Compile error: $@\n";
     }
     return $matcher;
 }
-
 
 1;
