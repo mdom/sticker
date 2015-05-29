@@ -28,67 +28,58 @@ sub _build_json {
 
 sub _build_dir {
     my $self = shift;
-    my $file  = path( $self->dir_name );
+    my $file = path( $self->dir_name );
     $file->mkpath();
     return $file;
 }
 
 sub get {
     my ( $self, $key ) = @_;
-    my $docs;
-    my $file = $self->dir->child($key);
-    if ( $file->exists ) {
-        $docs = $self->json->decode( $file->slurp_utf8 );
-    }
-    return $docs->{$key};
+    my $store = $self->_get_store;
+    return $store->{$key};
 }
 
 sub delete {
     my ( $self, $key ) = @_;
-    $key = b($key)->sha1_sum;
-    my $file = $self->dir->child($key);
-    if ( $file->exists ) {
-        return $file->remove;
-    }
-    return;
+    my $store = $self->_get_store;
+    delete $store->{$key};
+    return $self->save_store($store);
 }
 
 sub set {
     my ( $self, $doc ) = @_;
-    my $key;
-    if ( exists $doc->{url} ) {
-        $key = $doc->{url};
-    }
-    else {
-        return;
-    }
-    my $docs;
+    my $store = $self->_get_store;
+    my $key   = $doc->{url};
+    return unless $key;
+    $store->{$key} = $doc;
+    return $self->_save_store($store);
+}
+
+sub _get_store {
+    my ($self) = @_;
+    my $store;
     my $file = $self->dir->child('db.json');
     if ( $file->exists ) {
-        $docs = $self->json->decode( $file->slurp_utf8 );
+        $store = $self->json->decode( $file->slurp_utf8 );
     }
     else {
-	$docs = {};
+        $store = {};
     }
-    $docs->{$key} = $doc;
-    return $self->dir->child('db.json')->spew_utf8( $self->json->encode($docs) );
+    return $store;
+}
+
+sub _save_store {
+    my ( $self, $store ) = @_;
+    return $self->dir->child('db.json')
+      ->spew_utf8( $self->json->encode($store) );
 }
 
 sub search {
     my ( $self, $term ) = @_;
     my @matches;
     my $matcher = $self->compile_search($term);
-    my $docs;
-    my $file = $self->dir->child('db.json');
-    if ( $file->exists ) {
-        my $content = $file->slurp_utf8;
-        $content = b($content)->encode;
-        $docs    = decode_json( $content->to_string );
-    }
-    else {
-        $docs = {};
-    }
-    for my $doc ( values %$docs ) {
+    my $store   = $self->_get_store;
+    for my $doc ( values %{$store} ) {
         if ( $matcher->($doc) ) {
             push @matches, $doc;
         }
