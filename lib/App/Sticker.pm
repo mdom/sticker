@@ -145,9 +145,9 @@ sub mode_search {
 
     my $i   = 0;
     my $len = length(@matches);
-    for my $attrs (@matches) {
+    for my $doc (@matches) {
         my $line =
-          sprintf( "%*d %s - %s ", $len, ++$i, @{$attrs}{qw(url title)} );
+          sprintf( "%*d %s - %s ", $len, ++$i, $doc->{url}, $doc->{title} );
         print b($line)->encode . "\n";
 
         # print {$hist_fh} "$url\n";
