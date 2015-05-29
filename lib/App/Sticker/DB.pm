@@ -29,15 +29,10 @@ sub BUILDARGS {
     }
 }
 
-sub set {
-    my ( $self, @docs ) = @_;
-    my $store = $self->_get_store;
-    for my $doc ( @docs ) {
-	    my $key   = $doc->{url};
-	    next unless $key;
-	    $store->{$key} = $doc;
-    }
-    return $self->_save_store($store);
+sub DEMOLISH {
+    my ($self) = @_;
+    $self->save;
+    return;
 }
 
 sub _build_store {
