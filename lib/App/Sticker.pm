@@ -74,7 +74,6 @@ sub run {
     my %dispatch = (
         add    => \&mode_add,
         import => \&mode_import,
-        edit   => \&mode_edit,
         tag    => \&mode_tag,
         search => \&mode_search,
         open   => \&mode_open,
@@ -115,19 +114,6 @@ sub mode_delete {
     die "No urls for @urls\n"
       if !@urls;
     return $self->db->delete(@urls);
-}
-
-sub mode_edit {
-    my ( $self, $arg ) = @_;
-    my $url = $self->to_url($arg);
-    die "No url for $arg\n"
-      if !$url;
-    my $file = $self->db->get_file($url);
-    if ( $file->exists ) {
-        my $editor = $ENV{EDITOR} ? $ENV{EDITOR} : 'vi';
-        system( $editor , $file );
-    }
-    return;
 }
 
 sub mode_tag {
