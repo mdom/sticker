@@ -119,11 +119,14 @@ sub mode_delete {
 sub mode_tag {
     my $self = shift;
     my ( $arg, @new_tags ) = @_;
-    my $url = $self->to_url($arg);
+    my ($url) = $self->to_url($arg);
     die "No url for $arg\n"
       if !$url;
-    my @old_tags = b( $self->db->get( $url, 'tag' ) )->split(' ');
-    return $self->db->set( $url, 'tag', c( @old_tags, @new_tags )->uniq );
+    my $doc = $self->db->get( $url );
+    ## TODO way to remove tags
+    my $tags = c( @{$doc->{tags}}, @new_tags )->uniq->to_array;
+    $doc->{tags} = $tags;
+    return $self->db->set( $doc );
 }
 
 sub mode_open {
