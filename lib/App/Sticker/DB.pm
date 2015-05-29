@@ -36,7 +36,7 @@ sub get {
 sub delete {
     my ( $self, @keys ) = @_;
     my $store = $self->_get_store;
-    delete @$store{@key};
+    delete @$store{@keys};
     return $self->save_store($store);
 }
 
