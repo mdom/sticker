@@ -8,8 +8,8 @@ use Path::Tiny;
 use Mojo::JSON::MaybeXS;
 use Mojo::JSON qw(encode_json decode_json);
 
-has dir_name => ( is => 'ro', required => 1 );
-has dir => ( is => 'lazy' );
+has db_file => ( is => 'ro', required => 1 );
+has store => ( is => 'lazy' );
 
 sub Mojo::URL::TO_JSON {
     shift->to_string;
@@ -20,24 +20,13 @@ sub Mojo::ByteStream::TO_JSON {
     return $stream->to_string;
 }
 
-sub _build_dir {
-    my $self = shift;
-    my $file = path( $self->dir_name );
-    $file->mkpath();
-    return $file;
-}
-
-sub get {
-    my ( $self, @keys ) = @_;
-    my $store = $self->_get_store;
-    return @$store{@keys};
-}
-
-sub delete {
-    my ( $self, @keys ) = @_;
-    my $store = $self->_get_store;
-    delete @$store{@keys};
-    return $self->save_store($store);
+sub BUILDARGS {
+    my ( $class, @args ) = @_;
+    my $attrs = ref $args[0] eq 'HASH' ? $args[0] : {@args};
+    if ( exists $attrs->{db_file} ) {
+        $attrs->{db_file} = path( $attrs->{db_file} );
+        return $attrs;
+    }
 }
 
 sub set {
@@ -51,10 +40,10 @@ sub set {
     return $self->_save_store($store);
 }
 
-sub _get_store {
+sub _build_store {
     my ($self) = @_;
     my $store;
-    my $file = $self->dir->child('db.json');
+    my $file = path($self->db_file);
     if ( $file->exists ) {
         $store = decode_json( $file->slurp );
     }
@@ -64,17 +53,36 @@ sub _get_store {
     return $store;
 }
 
-sub _save_store {
+sub get {
+    my ( $self, @keys ) = @_;
+    return @{$self->store}{@keys};
+}
+
+sub delete {
+    my ( $self, @keys ) = @_;
+    return delete @{$self->store}{@keys};
+}
+
+sub set {
+    my ( $self, @docs ) = @_;
+    for my $doc (@docs) {
+        my $key = $doc->{url};
+        next unless $key;
+        $self->store->{$key} = $doc;
+    }
+    return;
+}
+
+sub save {
     my ( $self, $store ) = @_;
-    return $self->dir->child('db.json')->spew( encode_json($store) );
+    return $self->db_file->spew( encode_json($self->store) );
 }
 
 sub search {
     my ( $self, $term ) = @_;
     my @matches;
     my $matcher = $self->compile_search($term);
-    my $store   = $self->_get_store;
-    for my $doc ( values %{$store} ) {
+    for my $doc ( values %{$self->store} ) {
         if ( $matcher->($doc) ) {
             push @matches, $doc;
         }

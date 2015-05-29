@@ -58,7 +58,7 @@ sub _build_config {
 
 sub _build_db {
     my $self = shift;
-    return App::Sticker::DB->new( dir_name => $self->base_dir->child('db') );
+    return App::Sticker::DB->new( db_file => $self->base_dir->child('sticker.db') );
 }
 
 sub _build_base_dir {
