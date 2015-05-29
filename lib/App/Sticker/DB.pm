@@ -27,40 +27,67 @@ sub _build_json {
 
 sub _build_dir {
     my $self = shift;
-    my $dir  = path( $self->dir_name );
-    $dir->mkpath();
-    return $dir;
+    my $file  = path( $self->dir_name );
+    $file->mkpath();
+    return $file;
 }
 
 sub get {
     my ( $self, $key ) = @_;
-    $key = b($key)->sha1_sum;
-    my $doc;
+    my $docs;
     my $file = $self->dir->child($key);
     if ( $file->exists ) {
-        $doc = $self->json->decode( $file->slurp_utf8 );
+        $docs = $self->json->decode( $file->slurp_utf8 );
     }
-    return $doc;
+    return $docs->{$key};
+}
+
+sub delete {
+    my ( $self, $key ) = @_;
+    $key = b($key)->sha1_sum;
+    my $file = $self->dir->child($key);
+    if ( $file->exists ) {
+        return $file->remove;
+    }
+    return;
 }
 
 sub set {
     my ( $self, $doc ) = @_;
     my $key;
     if ( exists $doc->{url} ) {
-        $key = b( $doc->{url} )->sha1_sum;
+        $key = $doc->{url};
     }
     else {
         return;
     }
-    return $self->dir->child($key)->spew_utf8( $self->json->encode($doc) );
+    my $docs;
+    my $file = $self->dir->child('db.json');
+    if ( $file->exists ) {
+        $docs = $self->json->decode( $file->slurp_utf8 );
+    }
+    else {
+	$docs = {};
+    }
+    $docs->{$key} = $doc;
+    return $self->dir->child('db.json')->spew_utf8( $self->json->encode($docs) );
 }
 
 sub search {
     my ( $self, $term ) = @_;
     my @matches;
     my $matcher = $self->compile_search($term);
-    for my $file ( $self->dir->children ) {
-        my $doc = $self->json->decode( $file->slurp_utf8 );
+    my $docs;
+    my $file = $self->dir->child('db.json');
+    if ( $file->exists ) {
+        my $content = $file->slurp_utf8;
+        $content = b($content)->encode;
+        $docs    = decode_json( $content->to_string );
+    }
+    else {
+        $docs = {};
+    }
+    for my $doc ( values %$docs ) {
         if ( $matcher->($doc) ) {
             push @matches, $doc;
         }
