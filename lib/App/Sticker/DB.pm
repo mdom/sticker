@@ -34,24 +34,26 @@ sub _build_dir {
 }
 
 sub get {
-    my ( $self, $key ) = @_;
+    my ( $self, @keys ) = @_;
     my $store = $self->_get_store;
-    return $store->{$key};
+    return @$store{@keys};
 }
 
 sub delete {
-    my ( $self, $key ) = @_;
+    my ( $self, @keys ) = @_;
     my $store = $self->_get_store;
-    delete $store->{$key};
+    delete @$store{@key};
     return $self->save_store($store);
 }
 
 sub set {
-    my ( $self, $doc ) = @_;
+    my ( $self, @docs ) = @_;
     my $store = $self->_get_store;
-    my $key   = $doc->{url};
-    return unless $key;
-    $store->{$key} = $doc;
+    for my $doc ( @docs ) {
+	    my $key   = $doc->{url};
+	    next unless $key;
+	    $store->{$key} = $doc;
+    }
     return $self->_save_store($store);
 }
 
