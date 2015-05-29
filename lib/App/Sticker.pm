@@ -149,8 +149,7 @@ sub mode_search {
         my $line =
           sprintf( "%*d %s - %s ", $len, ++$i, $doc->{url}, $doc->{title} );
         print b($line)->encode . "\n";
-
-        # print {$hist_fh} "$url\n";
+        print {$hist_fh} $doc->{url} . "\n";
     }
 }
 
