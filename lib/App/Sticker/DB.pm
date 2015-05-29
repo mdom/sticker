@@ -56,7 +56,7 @@ sub _get_store {
     my $store;
     my $file = $self->dir->child('db.json');
     if ( $file->exists ) {
-        $store = decode_json( $file->slurp_utf8 );
+        $store = decode_json( $file->slurp );
     }
     else {
         $store = {};
@@ -66,7 +66,7 @@ sub _get_store {
 
 sub _save_store {
     my ( $self, $store ) = @_;
-    return $self->dir->child('db.json')->spew_utf8( encode_json($store) );
+    return $self->dir->child('db.json')->spew( encode_json($store) );
 }
 
 sub search {
