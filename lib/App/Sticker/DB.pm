@@ -9,8 +9,7 @@ use Mojo::JSON::MaybeXS;
 use Mojo::JSON qw(encode_json decode_json);
 
 has dir_name => ( is => 'ro', required => 1 );
-has dir      => ( is => 'lazy' );
-has json     => ( is => 'lazy' );
+has dir => ( is => 'lazy' );
 
 sub Mojo::URL::TO_JSON {
     shift->to_string;
@@ -19,11 +18,6 @@ sub Mojo::URL::TO_JSON {
 sub Mojo::ByteStream::TO_JSON {
     my $stream = shift;
     return $stream->to_string;
-}
-
-sub _build_json {
-    my $json = JSON::MaybeXS->new( pretty => 1, convert_blessed => 1 );
-    return $json;
 }
 
 sub _build_dir {
@@ -62,7 +56,7 @@ sub _get_store {
     my $store;
     my $file = $self->dir->child('db.json');
     if ( $file->exists ) {
-        $store = $self->json->decode( $file->slurp_utf8 );
+        $store = decode_json( $file->slurp_utf8 );
     }
     else {
         $store = {};
@@ -72,8 +66,7 @@ sub _get_store {
 
 sub _save_store {
     my ( $self, $store ) = @_;
-    return $self->dir->child('db.json')
-      ->spew_utf8( $self->json->encode($store) );
+    return $self->dir->child('db.json')->spew_utf8( encode_json($store) );
 }
 
 sub search {
