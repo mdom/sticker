@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Moo;
 use Mojo::ByteStream 'b';
+use Mojo::Collection 'c';
 use Path::Tiny;
 use Mojo::JSON::MaybeXS;
 use Mojo::JSON qw(encode_json decode_json);
@@ -96,7 +97,15 @@ sub compile_search {
             $sub .= " " . lc . " ";
         }
         elsif (/([^:]+):(.*)/) {
-            $sub .= qq{ \$hr->{$1} =~ q{$2} };
+            $sub .= qq[ 
+	        return unless exists \$hr->{$1};
+	        if ( ref \$hr->{$1} eq 'ARRAY' ) {
+			return c( \@{\$hr->{$1}} )->first(q{$2})
+		}
+		else {
+			\$hr->{$1} =~ q{$2}
+		}
+		];
         }
         else {
             die "Parse error (unknown token): $_\n";
