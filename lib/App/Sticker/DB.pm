@@ -5,7 +5,8 @@ use warnings;
 use Moo;
 use Mojo::ByteStream 'b';
 use Path::Tiny;
-use JSON::MaybeXS;
+use Mojo::JSON::MaybeXS;
+use Mojo::JSON qw(encode_json decode_json);
 
 has dir_name => ( is => 'ro', required => 1 );
 has dir      => ( is => 'lazy' );
