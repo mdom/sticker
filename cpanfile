@@ -1,5 +1,7 @@
 requires 'perl', '5.008005';
 requires 'Moo';
+requires 'MooX::Options';
+requires 'MooX::Cmd';
 requires 'Path::Tiny';
 requires 'Mojolicious';
 
