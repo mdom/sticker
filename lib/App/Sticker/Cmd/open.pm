@@ -14,7 +14,7 @@ sub execute {
       if !@urls;
     for my $url (@urls) {
         system( @{ $self->base->config->{handler} }, $url ) == 0
-          or warn "Error calling @{ $self->config->{handler} } $url: $!\n";
+          or warn "Error calling @{ $self->base->config->{handler} } $url: $!\n";
     }
     return;
 }
