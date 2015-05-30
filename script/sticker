@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
-use App::Sticker
+use App::Sticker;
 
-App::Sticker->new()->run(@ARGV);
+my $app = App::Sticker->new_with_options();
+$app->run(@ARGV);

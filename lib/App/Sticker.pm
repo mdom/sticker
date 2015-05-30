@@ -15,12 +15,15 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Path::Tiny;
 use Moo;
+use MooX::Options flavour => [qw( pass_through )], protect_argv => 0;
 
 our $VERSION = '0.01';
 
 has db       => ( is => 'lazy' );
 has config   => ( is => 'lazy' );
 has base_dir => ( is => 'lazy' );
+
+option db_file => ( is => 'lazy', format => 's', doc => 'Database file to use' );
 
 sub _build_config {
     my $self           = shift;
@@ -56,9 +59,14 @@ sub _build_config {
     return $config;
 }
 
+sub _build_db_file {
+	my $self = shift;
+	return $self->base_dir->child('sticker.db');
+}
+
 sub _build_db {
     my $self = shift;
-    return App::Sticker::DB->new( db_file => $self->base_dir->child('sticker.db') );
+    return App::Sticker::DB->new( db_file => $self->db_file );
 }
 
 sub _build_base_dir {
