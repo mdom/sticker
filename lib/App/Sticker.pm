@@ -4,18 +4,13 @@ package App::Sticker;
 
 use strict;
 use warnings;
-use feature "state";
+
+use Moo;
+use MooX::Cmd;
+use MooX::Options flavour => [qw( pass_through )], protect_argv => 0;
 
 use App::Sticker::DB;
-use Getopt::Long;
-use Mojo::UserAgent;
-use Mojo::DOM;
-use Mojo::JSON 'decode_json';
-use Mojo::ByteStream 'b';
-use Mojo::Collection 'c';
 use Path::Tiny;
-use Moo;
-use MooX::Options flavour => [qw( pass_through )], protect_argv => 0;
 
 our $VERSION = '0.01';
 
@@ -76,203 +71,8 @@ sub _build_base_dir {
     return $base_dir;
 }
 
-sub run {
-    my $self     = shift;
-    my $mode     = shift;
-    my %dispatch = (
-        add    => \&mode_add,
-        import => \&mode_import,
-        tag    => \&mode_tag,
-        search => \&mode_search,
-        open   => \&mode_open,
-        delete => \&mode_delete,
-    );
-
-    if ( !$mode ) {
-        die "Usage: $0 \$MODE\n";
-    }
-    elsif ( exists $dispatch{$mode} ) {
-        my $sub = $dispatch{$mode};
-        $self->$sub(@_);
-    }
-    else {
-        die "$0: Unknown mode $mode\n";
-    }
-    exit 0;
-}
-
-sub mode_add {
-    my ( $self, @urls ) = @_;
-    $self->add_urls( \@urls );
-}
-
-sub mode_import {
-    my ( $self, $file ) = @_;
-    my $content = path($file)->slurp_utf8;
-    my $dom     = Mojo::DOM->new($content);
-    my $urls =
-      $dom->find('a["href"]')->map( attr => 'href' )->grep( sub { /^http/ } )
-      ->to_array;
-    $self->add_urls($urls);
-}
-
-sub mode_delete {
-    my ( $self, @urls ) = @_;
-    @urls = $self->to_url(@urls);
-    die "No urls for @urls\n"
-      if !@urls;
-    return $self->db->delete(@urls);
-}
-
-sub mode_tag {
-    my $self = shift;
-    my ( $arg, @new_tags ) = @_;
-    my ($url) = $self->to_url($arg);
-    die "No url for $arg\n"
-      if !$url;
-    my $doc = $self->db->get( $url );
-    ## TODO way to remove tags
-    my $tags = c( @{$doc->{tags}}, @new_tags )->uniq->to_array;
-    $doc->{tags} = $tags;
-    return $self->db->set( $doc );
-}
-
-sub mode_open {
-    my ( $self, @urls ) = @_;
-    @urls = $self->to_url(@urls);
-    die "No urls for @urls\n"
-      if !@urls;
-    for my $url (@urls) {
-        system( @{ $self->config->{handler} }, $url ) == 0
-          or warn "Error calling @{ $self->config->{handler} } $url: $!\n";
-    }
-    return;
-}
-
-sub mode_search {
-    my $self    = shift;
-    my @matches = $self->db->search(@_);
-    my $hist_fh = $self->base_dir->child('last_search')->openw_utf8();
-
-    my $i   = 0;
-    my $len = length(@matches);
-    for my $doc (@matches) {
-        my $line =
-          sprintf( "%*d %s - %s ", $len, ++$i, $doc->{url}, $doc->{title} );
-        print b($line)->encode . "\n";
-        print {$hist_fh} $doc->{url} . "\n";
-    }
-}
-
-sub to_url {
-    my ( $self, @urls ) = @_;
-    my @normalized_urls;
-    for my $url (@urls) {
-        if ( $url =~ /^\d+$/ ) {
-            my $last_search = $self->base_dir->child('last_search');
-            if ( $last_search->exists ) {
-                my @urls = $last_search->lines( { chomp => 1 } );
-                $url = $urls[ $url - 1 ];
-            }
-        }
-        $url = $self->normalize_url($url);
-        push @normalized_urls, $url;
-    }
-    return @normalized_urls;
-}
-
-sub add_urls {
-    my ( $self, $urls ) = @_;
-    state $ua    = Mojo::UserAgent->new()->max_redirects(5);
-    state $idle  = $self->config->{worker};
-    state $delay = Mojo::IOLoop->delay();
-    while ( $idle and my $url = shift @$urls ) {
-        $url = $self->normalize_url($url);
-        $idle--;
-        my $cb = $delay->begin;
-        $ua->get(
-            $url => sub {
-                my ( $ua, $tx ) = @_;
-                $idle++;
-                $self->process_tx( $tx, $url );
-
-                # refresh worker pool
-                $self->add_urls($urls);
-                $cb->();
-            }
-        );
-    }
-    $delay->wait unless $delay->ioloop->is_running;
-}
-
-sub process_tx {
-    my $self = shift;
-    my ( $tx, $url, $result ) = @_;
-    if ( my $res = $tx->success ) {
-        my ( $title, $content );
-        if ( $res->headers->content_type =~ 'text/html' ) {
-            my $dom = $res->dom;
-            $title = $dom->at('title');
-            if ($title) {
-                $title = b( $title->all_text() )->squish;
-            }
-            $dom->find('head')->map('remove');
-            $dom->find('script')->map('remove');
-            my %stopword =
-              map { $_ => 1 } @{ $self->config->{stopwords} };
-
-            ## There are many pages without a body-tag, so i just use all the
-            ## text in the dom as content, TODO remove head before all_text()?
-
-            $content = $dom->all_text();
-            if ($content) {
-                $content =
-                  b($content)->squish->split(qr/[[:punct:][:space:]]+/)
-                  ->map( sub        { lc } )
-                  ->uniq->grep( sub { not exists $stopword{$_} } )
-                  ->grep( sub       { length > 1 } )->join(' ');
-            }
-            else {
-                warn "No words for $url\n";
-            }
-        }
-
-        $self->db->set(
-            {
-                title   => $title   || '',
-                content => $content || '',
-                url     => $url,
-            }
-        );
-
-    }
-    else {
-        my $err = $tx->error;
-        print STDERR "Error for $url: ";
-        if ( $err->{code} ) {
-            warn "code $err->{code} response: $err->{message}\n";
-        }
-        else {
-            warn "Connection error: $err->{message}\n";
-        }
-
-    }
-}
-
-sub normalize_url {
-    my $self       = shift;
-    my $url_string = shift;
-    my $url        = Mojo::URL->new($url_string);
-    ## If the user enters a url without a protocoll or a path, Mojo::URL parses
-    ## the hostname as path.
-    if ( not defined $url->host and defined $url->path ) {
-        $url = Mojo::URL->new()->host( $url->path->trailing_slash(0) );
-    }
-    $url->scheme('http') if !$url->scheme;
-    $url->authority('')  if !$url->authority;
-    $url->port(undef)    if $url->port && $url->port == 80;
-    $url->path('/')      if $url->path eq '';
-    return $url;
+sub execute {
+	return;
 }
 
 1;

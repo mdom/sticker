@@ -4,5 +4,5 @@ use strict;
 use warnings;
 use App::Sticker;
 
-my $app = App::Sticker->new_with_options();
-$app->run(@ARGV);
+my $app = App::Sticker->new_with_cmd();
+$app->execute();

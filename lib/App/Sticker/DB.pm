@@ -8,6 +8,7 @@ use Mojo::Collection 'c';
 use Path::Tiny;
 use Mojo::JSON::MaybeXS;
 use Mojo::JSON qw(encode_json decode_json);
+use Mojo::URL;
 
 has db_file => ( is => 'ro', required => 1 );
 has store => ( is => 'lazy' );
@@ -28,12 +29,6 @@ sub BUILDARGS {
         $attrs->{db_file} = path( $attrs->{db_file} );
         return $attrs;
     }
-}
-
-sub DEMOLISH {
-    my ($self) = @_;
-    $self->save;
-    return;
 }
 
 sub _build_store {
