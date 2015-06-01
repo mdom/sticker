@@ -5,8 +5,12 @@ use feature "state";
 use Moo::Role;
 use Mojo::UserAgent;
 use Mojo::ByteStream 'b';
+use MooX::Options;
 
 requires 'normalize_url';
+
+option 'reload' =>
+  ( is => 'ro', negativable => 1, doc => 'Reload already added urls' );
 
 sub add_urls {
     my ( $self, $urls ) = @_;
@@ -15,6 +19,7 @@ sub add_urls {
     state $delay = Mojo::IOLoop->delay();
     while ( $idle and my $url = shift @$urls ) {
         $url = $self->normalize_url($url);
+        next if $self->base->db->get($url) && !$self->reload;
         $idle--;
         my $cb = $delay->begin;
         $ua->get(
