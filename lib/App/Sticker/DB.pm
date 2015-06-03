@@ -107,10 +107,12 @@ sub compile_search {
             $sub .= qq[ match_property(\$hr,q{$1},q{$2}) ];
         }
         else {
-            die "Parse error (unknown token): $_\n";
+            $sub .= qq[(]
+              . qq[    match_property(\$hr,q{title},q{$_}) ]
+              . qq[ or match_property(\$hr,q{url},q{$_}) ] . qq[)];
         }
+        $sub .= '}';
     }
-    $sub .= '}';
     my $matcher = eval $sub;
     if ($@) {
         die "Compile error: $@\n";
