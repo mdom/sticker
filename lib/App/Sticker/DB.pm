@@ -81,6 +81,18 @@ sub search {
     return @matches;
 }
 
+sub match_property {
+    my ( $hr, $prop, $re ) = @_;
+    return unless exists $hr->{$prop};
+    if ( ref $hr->{$prop} eq 'ARRAY' ) {
+        return c( @{ $hr->{$prop} } )->first(/$re/io);
+    }
+    else {
+        return $hr->{$prop} =~ /$re/io;
+    }
+    return;
+}
+
 sub compile_search {
     my ( $self, @terms ) = @_;
     my $sub = 'sub { my $hr = shift;';
@@ -92,15 +104,7 @@ sub compile_search {
             $sub .= " " . lc . " ";
         }
         elsif (/([^:]+):(.*)/) {
-            $sub .= qq[ 
-	        return unless exists \$hr->{$1};
-	        if ( ref \$hr->{$1} eq 'ARRAY' ) {
-			return c( \@{\$hr->{$1}} )->first(q{$2})
-		}
-		else {
-			\$hr->{$1} =~ q{$2}
-		}
-		];
+            $sub .= qq[ match_property(\$hr,q{$1},q{$2}) ];
         }
         else {
             die "Parse error (unknown token): $_\n";
