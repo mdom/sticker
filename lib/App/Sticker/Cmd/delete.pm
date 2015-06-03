@@ -7,8 +7,8 @@ extends 'App::Sticker::Cmd';
 with('App::Sticker::Util','App::Sticker::Modifier');
 
 sub execute {
-    my ( $self, @urls ) = @_;
-    @urls = $self->to_url(@urls);
+    my ( $self ) = @_;
+    my @urls = $self->to_url(@ARGV);
     die "No urls for @urls\n"
       if !@urls;
     return $self->base->db->delete(@urls);

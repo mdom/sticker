@@ -8,8 +8,7 @@ with('App::Sticker::Util');
 
 sub execute {
     my $self = shift;
-    my @urls = @ARGV;
-    @urls = $self->to_url(@urls);
+    my @urls = $self->to_url(@ARGV);
     die "No urls for @urls\n"
       if !@urls;
     for my $url (@urls) {
