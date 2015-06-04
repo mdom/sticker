@@ -14,6 +14,7 @@ option 'reload' =>
 
 sub add_urls {
     my ( $self, $urls ) = @_;
+    my $urls_added = [];
     state $ua    = Mojo::UserAgent->new()->max_redirects(5);
     state $idle  = $self->base->config->{worker};
     state $delay = Mojo::IOLoop->delay();
@@ -29,17 +30,18 @@ sub add_urls {
                 $self->process_tx( $tx, $url );
 
                 # refresh worker pool
-                $self->add_urls($urls);
+                $self->add_urls($urls,$urls_added);
                 $cb->();
             }
         );
     }
     $delay->wait unless $delay->ioloop->is_running;
+    return $urls_added;
 }
 
 sub process_tx {
     my $self = shift;
-    my ( $tx, $url, $result ) = @_;
+    my ( $tx, $url, $urls_added ) = @_;
     if ( my $res = $tx->success ) {
         my ( $title, $content );
         if ( $res->headers->content_type =~ 'text/html' ) {
@@ -69,11 +71,13 @@ sub process_tx {
             }
         }
 
+	push @$urls_added, $url;
         $self->base->db->set(
             {
                 title   => $title   || '',
                 content => $content || '',
                 url     => $url,
+		date_added => time(),
             }
         );
 
@@ -89,6 +93,7 @@ sub process_tx {
         }
 
     }
+    return;
 }
 
 1;
