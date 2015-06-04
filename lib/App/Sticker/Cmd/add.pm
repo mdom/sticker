@@ -2,7 +2,6 @@ package App::Sticker::Cmd::add;
 use strict;
 use warnings;
 use Moo;
-use MooX::Cmd;
 use MooX::Options usage_string => 'USAGE: %c %o URL...', flavour => [qw( pass_through )], protect_argv => 0;
 
 extends 'App::Sticker::Cmd';

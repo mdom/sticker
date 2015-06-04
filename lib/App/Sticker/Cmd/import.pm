@@ -2,7 +2,6 @@ package App::Sticker::Cmd::import;
 use strict;
 use warnings;
 use Moo;
-use MooX::Cmd;
 extends 'App::Sticker::Cmd';
 with( 'App::Sticker::UA', 'App::Sticker::Util', 'App::Sticker::Modifier' );
 

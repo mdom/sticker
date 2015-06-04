@@ -2,7 +2,6 @@ package App::Sticker::Cmd::search;
 use strict;
 use warnings;
 use Moo;
-use MooX::Cmd;
 use Mojo::ByteStream 'b';
 extends 'App::Sticker::Cmd';
 

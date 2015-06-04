@@ -2,7 +2,6 @@ package App::Sticker::Cmd::open;
 use strict;
 use warnings;
 use Moo;
-use MooX::Cmd;
 extends 'App::Sticker::Cmd';
 with('App::Sticker::Util');
 
