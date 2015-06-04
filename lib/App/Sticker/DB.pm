@@ -12,6 +12,7 @@ use Mojo::URL;
 
 has db_file => ( is => 'ro', required => 1 );
 has store => ( is => 'lazy' );
+has dirty => ( is => 'rw', default => sub { 0 });
 
 sub Mojo::URL::TO_JSON {
     shift->to_string;
@@ -51,11 +52,13 @@ sub get {
 
 sub delete {
     my ( $self, @keys ) = @_;
+    $self->dirty(0) if @keys;
     return delete @{$self->store}{@keys};
 }
 
 sub set {
     my ( $self, @docs ) = @_;
+    $self->dirty(1) if @docs;
     for my $doc (@docs) {
         my $key = $doc->{url};
         next unless $key;
@@ -65,8 +68,11 @@ sub set {
 }
 
 sub save {
-    my ( $self, $store ) = @_;
-    return $self->db_file->spew( encode_json($self->store) );
+    my ($self) = @_;
+    if ( $self->dirty ) {
+        return $self->db_file->spew( encode_json( $self->store ) );
+    }
+    return;
 }
 
 sub search {
