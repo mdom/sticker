@@ -4,11 +4,11 @@ use strict;
 use warnings;
 use Moo;
 use Mojo::ByteStream 'b';
-use Mojo::Collection 'c';
 use Path::Tiny;
 use Mojo::JSON::MaybeXS;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::URL;
+use List::Util 'first';
 
 has db_file => ( is => 'ro', required => 1 );
 has store => ( is => 'lazy' );
@@ -91,7 +91,7 @@ sub match_property {
     my ( $hr, $prop, $re ) = @_;
     return unless exists $hr->{$prop};
     if ( ref $hr->{$prop} eq 'ARRAY' ) {
-        return c( @{ $hr->{$prop} } )->first(/$re/io);
+        return first { /$re/io } @{ $hr->{$prop} };
     }
     else {
         return $hr->{$prop} =~ /$re/io;

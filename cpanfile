@@ -4,6 +4,7 @@ requires 'MooX::Options';
 requires 'MooX::Cmd';
 requires 'Path::Tiny';
 requires 'Mojolicious';
+requires 'List::Util';
 
 # requires 'Some::Module', 'VERSION';
 
