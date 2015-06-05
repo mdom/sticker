@@ -25,8 +25,9 @@ sub execute {
     my $db         = $self->base->db;
     for my $url ( @$urls_added ) {
         my $doc = $db->get($url);
-	next unless exists $attrs{$url}->{date_added};
-        $doc->{date_added} = $attrs{$url}->{date_added};
+	my $url = $url->to_string;
+	next unless exists $attrs{$url}->{add_date};
+        $doc->{add_date} = $attrs{$url}->{add_date};
 	$db->set($doc);
     }
     return;

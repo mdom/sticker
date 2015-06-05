@@ -74,11 +74,12 @@ sub process_tx {
 	push @$urls_added, $url;
         $self->base->db->set(
             {
-                title   => $title   || '',
-                content => $content || '',
-                url     => $url,
-		date_added => time(),
+                title    => $title   || '',
+                content  => $content || '',
+                url      => $url,
+		add_date => time(),
             }
+
         );
 
     }
