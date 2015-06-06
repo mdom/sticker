@@ -9,6 +9,7 @@ use Mojo::JSON::MaybeXS;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::URL;
 use List::Util 'first';
+use Time::Piece;
 
 has db_file => ( is => 'ro', required => 1 );
 has store => ( is => 'lazy' );
@@ -114,15 +115,42 @@ sub search {
     return @matches;
 }
 
+sub parse_date {
+	my $string = shift;
+	my $t;
+	my @formats = ( '%Y%m%d' );
+	for my $format ( @formats ) {
+		$t = Time::Piece->strptime($string,$format);
+		return $t if $t;
+	}
+	return;
+}
+
 sub match_property {
-    my ( $hr, $prop, $re ) = @_;
+    my ( $hr, $prop, $matcher ) = @_;
     return unless exists $hr->{$prop};
     if ( ref $hr->{$prop} eq 'ARRAY' ) {
-        return first { /$re/io } @{ $hr->{$prop} };
+        return first { /$matcher/io } @{ $hr->{$prop} };
+    }
+    if ( $prop eq 'add_date' ) {
+	    $matcher =~ s/^([<>=])?(.*)/$2/;
+	    my $comparison = $1;
+	    my $added = localtime($hr->{add_date});
+	    return unless $added;
+	    $matcher   = parse_date($matcher);
+	    return unless $matcher;
+
+            if    ( not defined $comparison ) { return $added == $matcher }
+            elsif ( $comparison eq '=' )      { return $added == $matcher }
+            elsif ( $comparison eq '<' )      { return $added < $matcher }
+            elsif ( $comparison eq '>' )      { return $added > $matcher }
+
+	    return;
     }
     else {
-        return $hr->{$prop} =~ /$re/io;
+        return $hr->{$prop} =~ /$matcher/io;
     }
+
     return;
 }
 
