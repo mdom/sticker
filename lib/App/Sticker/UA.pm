@@ -27,10 +27,10 @@ sub add_urls {
             $url => sub {
                 my ( $ua, $tx ) = @_;
                 $idle++;
-                $self->process_tx( $tx, $url );
+                $self->process_tx( $tx, $url, $urls_added );
 
                 # refresh worker pool
-                $self->add_urls($urls,$urls_added);
+                $self->add_urls($urls);
                 $cb->();
             }
         );
