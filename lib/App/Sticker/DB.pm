@@ -86,6 +86,11 @@ sub save {
     return;
 }
 
+sub keys {
+    my ($self) = @_;
+    return keys %{ $self->store };
+}
+
 sub search {
     my ( $self, $term ) = @_;
     my @matches;
