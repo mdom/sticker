@@ -5,6 +5,7 @@ requires 'MooX::Cmd';
 requires 'Path::Tiny';
 requires 'Mojolicious';
 requires 'List::Util';
+requires 'String::ShellQuote';
 
 # requires 'Some::Module', 'VERSION';
 

@@ -39,7 +39,7 @@ sub _build_config {
               which while who who's whom why why's will with won't would wouldn't you
               you'd you'll you're you've your yours yourself yourselves)
         ],
-        handler => [qw(iceweasel -new-tab)],
+        url_viewer => 'iceweasel -new-tab %s',
         worker  => 5,
     );
 
