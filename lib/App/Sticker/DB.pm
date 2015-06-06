@@ -47,7 +47,14 @@ sub _build_store {
 
 sub get {
     my ( $self, @keys ) = @_;
-    return @{$self->store}{@keys};
+    my @docs;
+    for my $key (@keys) {
+        my $doc = $self->store->{$key};
+        next unless $doc;
+        $doc->{_db_orig_key} = $key;
+        push @docs, $doc;
+    }
+    return @docs;
 }
 
 sub map {
@@ -73,6 +80,10 @@ sub set {
     for my $doc (@docs) {
         my $key = $doc->{url};
         next unless $key;
+        my $orig_key = delete $doc->{_db_orig_key};
+        if ( $key ne $orig_key ) {
+            delete $self->store->{$orig_key};
+        }
         $self->store->{$key} = $doc;
     }
     return;
