@@ -50,6 +50,17 @@ sub get {
     return @{$self->store}{@keys};
 }
 
+sub map {
+	my ($self,$code) = @_;
+	for my $doc ( values %{$self->store} ) {
+		local $_ = $doc;
+		eval $code;
+		die "$@\n" if $@;
+		$self->set($doc);
+	}
+	return;
+}
+
 sub delete {
     my ( $self, @keys ) = @_;
     $self->dirty(0) if @keys;
