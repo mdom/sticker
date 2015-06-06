@@ -81,7 +81,7 @@ sub set {
         my $key = $doc->{url};
         next unless $key;
         my $orig_key = delete $doc->{_db_orig_key};
-        if ( $key ne $orig_key ) {
+        if ( $orig_key and $key ne $orig_key ) {
             delete $self->store->{$orig_key};
         }
         $self->store->{$key} = $doc;
