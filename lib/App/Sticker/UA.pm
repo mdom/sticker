@@ -14,7 +14,7 @@ option 'reload' =>
 
 sub add_urls {
     my ( $self, $urls ) = @_;
-    my $urls_added = [];
+    state $urls_added = [];
     state $ua    = Mojo::UserAgent->new()->max_redirects(5);
     state $idle  = $self->base->config->{worker};
     state $delay = Mojo::IOLoop->delay();
