@@ -71,8 +71,9 @@ sub map {
 
 sub delete {
     my ( $self, @keys ) = @_;
-    $self->dirty(0) if @keys;
-    return delete @{$self->store}{@keys};
+    my @deleted = delete @{$self->store}{@keys};
+    $self->dirty(1) if @deleted;
+    return wantarray ? @deleted : $deleted[-1];
 }
 
 sub set {
