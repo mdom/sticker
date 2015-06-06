@@ -54,7 +54,7 @@ sub get {
         $doc->{_db_orig_key} = $key;
         push @docs, $doc;
     }
-    return @docs;
+    return wantarray ? @docs : $docs[0];
 }
 
 sub map {
