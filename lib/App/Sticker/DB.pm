@@ -105,9 +105,9 @@ sub keys {
 }
 
 sub search {
-    my ( $self, $term ) = @_;
+    my ( $self, @terms ) = @_;
     my @matches;
-    my $matcher = $self->compile_search($term);
+    my $matcher = $self->compile_search(@terms);
     for my $doc ( values %{$self->store} ) {
         if ( $matcher->($doc) ) {
             push @matches, $doc;
@@ -173,8 +173,8 @@ sub compile_search {
               . qq[    match_property(\$hr,q{title},q{$_}) ]
               . qq[ or match_property(\$hr,q{url},q{$_}) ] . qq[)];
         }
-        $sub .= '}';
     }
+    $sub .= '}';
     my $matcher = eval $sub;
     if ($@) {
         die "Compile error: $@\n";
