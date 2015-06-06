@@ -10,7 +10,7 @@ use MooX::Options;
 requires 'normalize_url';
 
 option 'reload' =>
-  ( is => 'ro', negativable => 1, doc => 'Reload already added urls' );
+  ( is => 'ro', negativable => 1, doc => 'Reload already added urls', default => sub { 1 });
 
 sub add_urls {
     my ( $self, $urls ) = @_;
