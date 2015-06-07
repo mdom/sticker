@@ -149,7 +149,7 @@ sub match_property {
 	    return;
     }
     else {
-        return $hr->{$prop} =~ /$matcher/io;
+        return $hr->{$prop} =~ /$matcher/i;
     }
 
     return;
