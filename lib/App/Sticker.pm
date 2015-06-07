@@ -12,11 +12,15 @@ use MooX::Options flavour => [qw( pass_through )], protect_argv => 0;
 use App::Sticker::DB;
 use Path::Tiny;
 
+use Mojo::JSON::MaybeXS;
+use Mojo::JSON qw(encode_json decode_json);
+
 our $VERSION = '0.01';
 
 has db       => ( is => 'lazy' );
 has config   => ( is => 'lazy' );
-has base_dir => ( is => 'lazy' );
+
+option base_dir => ( is => 'lazy', coerce => sub { path($_[0])}, format => 's', doc => 'Basedir for config and db');
 
 option db_file => ( is => 'lazy', format => 's', doc => 'Database file to use' );
 option db_backup => (
@@ -26,9 +30,22 @@ option db_backup => (
     doc         => 'Backup database before changing it'
 );
 
+option worker =>
+  ( is => 'ro', format => 'i', doc => 'Number of workers for downloading' );
+option url_viewer => (
+    is      => 'ro',
+    format  => 's',
+    doc     => 'Command to view urls',
+);
+option stopwords => (
+    is      => 'ro',
+    format  => 's@',
+    doc     => 'Words to ignore for content search',
+);
 
-sub _build_config {
-    my $self           = shift;
+sub BUILDARGS {
+    my ( $class, @args ) = @_;
+    my $args = ref $args[0] ? $args[0] : {@args};
     my %default_config = (
         stopwords => [
             qw(a about above after again against all am an and any are aren't as at
@@ -47,18 +64,25 @@ sub _build_config {
               you'd you'll you're you've your yours yourself yourselves)
         ],
         url_viewer => 'iceweasel -new-tab %s',
-        worker  => 5,
+        worker     => 5,
+	base_dir   => '~/.sticker',
     );
 
-    my $config_file = $self->base_dir->child('config');
-    my $config      = \%default_config;
+    ## TODO combine command line args and configuration file
+    my $config = { %default_config, %$args };
+
+    my $file_options = {};
+    my $config_file = path($config->{base_dir})->child('config');
     if ( $config_file->exists ) {
-        my $json = eval { decode_json( $config_file->slurp_utf8 ) };
-        if ($json) {
-            $config = { %default_config, %$json };
-        }
+        $file_options = eval { decode_json( $config_file->slurp_utf8 ) };
+	if ($@) {
+		die "$0: Error reading configuration file: $@\n";
+	}
     }
-    return $config;
+
+    $config = { %default_config, %$file_options, %$args };
+
+    return $config; 
 }
 
 sub _build_db_file {
