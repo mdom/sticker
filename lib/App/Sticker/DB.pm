@@ -164,6 +164,7 @@ sub compile_search {
         }
         elsif (/or/i)  { $sub .= " || "; }
         elsif (/and/i) { $sub .= " && "; }
+        elsif (/not/i) { $sub .= " ! "; }
         elsif (/([^:]+):(.*)/) {
             $sub .= qq[ match_property(\$hr,q{$1},q{$2}) ];
         }
