@@ -162,9 +162,8 @@ sub compile_search {
         if (/[()]/) {
             $sub .= " $_ ";
         }
-        elsif (/or|and/i) {
-            $sub .= " " . lc . " ";
-        }
+        elsif (/or/i)  { $sub .= " || "; }
+        elsif (/and/i) { $sub .= " && "; }
         elsif (/([^:]+):(.*)/) {
             $sub .= qq[ match_property(\$hr,q{$1},q{$2}) ];
         }
