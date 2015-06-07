@@ -19,6 +19,13 @@ has config   => ( is => 'lazy' );
 has base_dir => ( is => 'lazy' );
 
 option db_file => ( is => 'lazy', format => 's', doc => 'Database file to use' );
+option db_backup => (
+    is          => 'ro',
+    negativable => 1,
+    default     => sub { 1 },
+    doc         => 'Backup database before changing it'
+);
+
 
 sub _build_config {
     my $self           = shift;
@@ -61,7 +68,7 @@ sub _build_db_file {
 
 sub _build_db {
     my $self = shift;
-    return App::Sticker::DB->new( db_file => $self->db_file );
+    return App::Sticker::DB->new( db_file => $self->db_file, backup => $self->db_backup );
 }
 
 sub _build_base_dir {

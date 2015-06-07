@@ -14,6 +14,7 @@ use Time::Piece;
 has db_file => ( is => 'ro', required => 1 );
 has store => ( is => 'lazy' );
 has dirty => ( is => 'rw', default => sub { 0 });
+has backup => ( is => 'rw', default => sub { 1 });
 
 sub Mojo::URL::TO_JSON {
     shift->to_string;
@@ -94,6 +95,7 @@ sub set {
 sub save {
     my ($self) = @_;
     if ( $self->dirty ) {
+	$self->db_file->copy($self->db_file . ".bak");
         return $self->db_file->spew( encode_json( $self->store ) );
     }
     return;
