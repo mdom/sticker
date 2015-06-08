@@ -16,7 +16,7 @@ sub add_urls {
     my ( $self, $urls ) = @_;
     state $urls_added = [];
     state $ua    = Mojo::UserAgent->new()->max_redirects(5);
-    state $idle  = $self->base->config->{worker};
+    state $idle  = $self->base->worker;
     state $delay = Mojo::IOLoop->delay();
     while ( $idle and my $url = shift @$urls ) {
         $url = $self->normalize_url($url);
@@ -53,7 +53,7 @@ sub process_tx {
             $dom->find('head')->map('remove');
             $dom->find('script')->map('remove');
             my %stopword =
-              map { $_ => 1 } @{ $self->base->config->{stopwords} };
+              map { $_ => 1 } @{ $self->base->stopwords };
 
             ## There are many pages without a body-tag, so i just use all the
             ## text in the dom as content, TODO remove head before all_text()?

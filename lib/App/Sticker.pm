@@ -18,7 +18,6 @@ use Mojo::JSON qw(encode_json decode_json);
 our $VERSION = '0.01';
 
 has db       => ( is => 'lazy' );
-has config   => ( is => 'lazy' );
 
 option base_dir => ( is => 'lazy', coerce => sub { path($_[0])}, format => 's', doc => 'Basedir for config and db');
 

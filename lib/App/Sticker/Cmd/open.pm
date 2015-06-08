@@ -13,7 +13,7 @@ sub execute {
       if !@urls;
     for my $url (@urls) {
         system( $command ) == 0
-	my $viewer = $self->base->config->{url_viewer};
+	my $viewer = $self->base->url_viewer;
 	my $command = sprintf($viewer,shell_quote($url));
           or warn "Error calling $command: $!\n";
     }
