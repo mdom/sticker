@@ -64,19 +64,20 @@ sub BUILDARGS {
         ],
         url_viewer => 'iceweasel -new-tab %s',
         worker     => 5,
-	base_dir   => '~/.sticker',
+        base_dir   => '~/.sticker',
     );
 
     ## TODO combine command line args and configuration file
     my $config = { %default_config, %$args };
 
     my $file_options = {};
-    my $config_file = path($config->{base_dir})->child('config');
+    my $config_file  = path( $config->{base_dir} )->child('config');
     if ( $config_file->exists ) {
         $file_options = eval { decode_json( $config_file->slurp_utf8 ) };
-	if ($@) {
-		die "$0: Error reading configuration file: $@\n";
-	}
+        if ($@) {
+            die "$0: Error reading configuration file: $@\n";
+        }
+    }
     my @stopwords;
     for my $ref ( \%default_config, $args, $file_options ) {
         if ( exists $ref->{stopwords} and ref( $ref->{stopwords} ) eq 'ARRAY' )
@@ -88,7 +89,7 @@ sub BUILDARGS {
     $config =
       { %default_config, %$file_options, %$args, stopwords => \@stopwords };
 
-    return $config; 
+    return $config;
 }
 
 sub _build_db_file {
