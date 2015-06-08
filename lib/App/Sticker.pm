@@ -77,9 +77,16 @@ sub BUILDARGS {
 	if ($@) {
 		die "$0: Error reading configuration file: $@\n";
 	}
+    my @stopwords;
+    for my $ref ( \%default_config, $args, $file_options ) {
+        if ( exists $ref->{stopwords} and ref( $ref->{stopwords} ) eq 'ARRAY' )
+        {
+            push @stopwords, @{$ref->{stopwords}};
+        }
     }
 
-    $config = { %default_config, %$file_options, %$args };
+    $config =
+      { %default_config, %$file_options, %$args, stopwords => \@stopwords };
 
     return $config; 
 }
