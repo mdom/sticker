@@ -9,15 +9,19 @@ use MooX::Options;
 
 requires 'normalize_url';
 
-option 'reload' =>
-  ( is => 'ro', negativable => 1, doc => 'Reload already added urls', default => sub { 1 });
+option 'reload' => (
+    is          => 'ro',
+    negativable => 1,
+    doc         => 'Reload already added urls',
+    default     => sub { 1 }
+);
 
 sub add_urls {
     my ( $self, $urls ) = @_;
     state $urls_added = [];
-    state $ua    = Mojo::UserAgent->new()->max_redirects(5);
-    state $idle  = $self->base->worker;
-    state $delay = Mojo::IOLoop->delay();
+    state $ua         = Mojo::UserAgent->new()->max_redirects(5);
+    state $idle       = $self->base->worker;
+    state $delay      = Mojo::IOLoop->delay();
     while ( $idle and my $url = shift @$urls ) {
         $url = $self->normalize_url($url);
         next if $self->base->db->get($url) && !$self->reload;
@@ -71,13 +75,13 @@ sub process_tx {
             }
         }
 
-	push @$urls_added, $url;
+        push @$urls_added, $url;
         $self->base->db->set(
             {
-                title    => $title   || '',
-                content  => $content || '',
-                url      => $url,
-		add_date => time(),
+                title   => $title   || '',
+                content => $content || '',
+                url     => $url,
+                add_date => time(),
             }
 
         );

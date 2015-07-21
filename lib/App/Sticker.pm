@@ -17,11 +17,18 @@ use Mojo::JSON qw(encode_json decode_json);
 
 our $VERSION = '0.01';
 
-has db       => ( is => 'lazy' );
+has db => ( is => 'lazy' );
 
-option base_dir => ( is => 'lazy', coerce => sub { path($_[0])}, format => 's', doc => 'Basedir for config and db');
+option base_dir => (
+    is     => 'lazy',
+    coerce => sub { path( $_[0] ) },
+    format => 's',
+    doc    => 'Basedir for config and db'
+);
 
-option db_file => ( is => 'lazy', format => 's', doc => 'Database file to use' );
+option db_file =>
+  ( is => 'lazy', format => 's', doc => 'Database file to use' );
+
 option db_backup => (
     is          => 'ro',
     negativable => 1,
@@ -32,14 +39,14 @@ option db_backup => (
 option worker =>
   ( is => 'ro', format => 'i', doc => 'Number of workers for downloading' );
 option url_viewer => (
-    is      => 'ro',
-    format  => 's',
-    doc     => 'Command to view urls',
+    is     => 'ro',
+    format => 's',
+    doc    => 'Command to view urls',
 );
 option stopwords => (
-    is      => 'ro',
-    format  => 's@',
-    doc     => 'Words to ignore for content search',
+    is     => 'ro',
+    format => 's@',
+    doc    => 'Words to ignore for content search',
 );
 
 sub BUILDARGS {
@@ -82,7 +89,7 @@ sub BUILDARGS {
     for my $ref ( \%default_config, $args, $file_options ) {
         if ( exists $ref->{stopwords} and ref( $ref->{stopwords} ) eq 'ARRAY' )
         {
-            push @stopwords, @{$ref->{stopwords}};
+            push @stopwords, @{ $ref->{stopwords} };
         }
     }
 
@@ -93,13 +100,16 @@ sub BUILDARGS {
 }
 
 sub _build_db_file {
-	my $self = shift;
-	return $self->base_dir->child('sticker.db');
+    my $self = shift;
+    return $self->base_dir->child('sticker.db');
 }
 
 sub _build_db {
     my $self = shift;
-    return App::Sticker::DB->new( db_file => $self->db_file, backup => $self->db_backup );
+    return App::Sticker::DB->new(
+        db_file => $self->db_file,
+        backup  => $self->db_backup
+    );
 }
 
 sub _build_base_dir {
@@ -110,7 +120,7 @@ sub _build_base_dir {
 }
 
 sub execute {
-	return;
+    return;
 }
 
 1;

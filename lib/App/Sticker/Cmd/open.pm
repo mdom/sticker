@@ -12,9 +12,8 @@ sub execute {
     die "No urls for @urls\n"
       if !@urls;
     for my $url (@urls) {
-        system( $command ) == 0
-	my $viewer = $self->base->url_viewer;
-	my $command = sprintf($viewer,shell_quote($url));
+        system($command ) == 0 my $viewer = $self->base->url_viewer;
+        my $command = sprintf( $viewer, shell_quote($url) );
           or warn "Error calling $command: $!\n";
     }
     return;

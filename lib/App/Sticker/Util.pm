@@ -29,7 +29,7 @@ sub _expand_nums {
     my ( $self, $num ) = @_;
     my @nums;
     for my $num ( split( ',', $num ) ) {
-        if ( $num =~ /^(\d+)-(\d+)$/) {
+        if ( $num =~ /^(\d+)-(\d+)$/ ) {
             push @nums, $1 .. $2;
         }
         else {

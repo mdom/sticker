@@ -13,8 +13,8 @@ use Time::Piece;
 
 has db_file => ( is => 'ro', required => 1 );
 has store => ( is => 'lazy' );
-has dirty => ( is => 'rw', default => sub { 0 });
-has backup => ( is => 'rw', default => sub { 1 });
+has dirty  => ( is => 'rw', default => sub { 0 } );
+has backup => ( is => 'rw', default => sub { 1 } );
 
 sub Mojo::URL::TO_JSON {
     shift->to_string;
@@ -37,7 +37,7 @@ sub BUILDARGS {
 sub _build_store {
     my ($self) = @_;
     my $store;
-    my $file = path($self->db_file);
+    my $file = path( $self->db_file );
     if ( $file->exists ) {
         $store = decode_json( $file->slurp );
     }
@@ -60,19 +60,19 @@ sub get {
 }
 
 sub map {
-	my ($self,$code) = @_;
-	for my $doc ( values %{$self->store} ) {
-		local $_ = $doc;
-		eval $code;
-		die "$@\n" if $@;
-		$self->set($doc);
-	}
-	return;
+    my ( $self, $code ) = @_;
+    for my $doc ( values %{ $self->store } ) {
+        local $_ = $doc;
+        eval $code;
+        die "$@\n" if $@;
+        $self->set($doc);
+    }
+    return;
 }
 
 sub delete {
     my ( $self, @keys ) = @_;
-    my @deleted = delete @{$self->store}{@keys};
+    my @deleted = delete @{ $self->store }{@keys};
     $self->dirty(1) if @deleted;
     return wantarray ? @deleted : $deleted[-1];
 }
@@ -95,7 +95,7 @@ sub set {
 sub save {
     my ($self) = @_;
     if ( $self->dirty ) {
-	$self->db_file->copy($self->db_file . ".bak");
+        $self->db_file->copy( $self->db_file . ".bak" );
         return $self->db_file->spew( encode_json( $self->store ) );
     }
     return;
@@ -110,7 +110,7 @@ sub search {
     my ( $self, @terms ) = @_;
     my @matches;
     my $matcher = $self->compile_search(@terms);
-    for my $doc ( values %{$self->store} ) {
+    for my $doc ( values %{ $self->store } ) {
         if ( $matcher->($doc) ) {
             push @matches, $doc;
         }
@@ -119,14 +119,14 @@ sub search {
 }
 
 sub parse_date {
-	my $string = shift;
-	my $t;
-	my @formats = ( '%Y%m%d' );
-	for my $format ( @formats ) {
-		$t = Time::Piece->strptime($string,$format);
-		return $t if $t;
-	}
-	return;
+    my $string = shift;
+    my $t;
+    my @formats = ('%Y%m%d');
+    for my $format (@formats) {
+        $t = Time::Piece->strptime( $string, $format );
+        return $t if $t;
+    }
+    return;
 }
 
 sub match_property {
@@ -136,19 +136,19 @@ sub match_property {
         return first { /$matcher/io } @{ $hr->{$prop} };
     }
     if ( $prop eq 'add_date' ) {
-	    $matcher =~ s/^([<>=])?(.*)/$2/;
-	    my $comparison = $1;
-	    my $added = localtime($hr->{add_date});
-	    return unless $added;
-	    $matcher   = parse_date($matcher);
-	    return unless $matcher;
+        $matcher =~ s/^([<>=])?(.*)/$2/;
+        my $comparison = $1;
+        my $added      = localtime( $hr->{add_date} );
+        return unless $added;
+        $matcher = parse_date($matcher);
+        return unless $matcher;
 
-            if    ( not defined $comparison ) { return $added == $matcher }
-            elsif ( $comparison eq '=' )      { return $added == $matcher }
-            elsif ( $comparison eq '<' )      { return $added < $matcher }
-            elsif ( $comparison eq '>' )      { return $added > $matcher }
+        if    ( not defined $comparison ) { return $added == $matcher }
+        elsif ( $comparison eq '=' )      { return $added == $matcher }
+        elsif ( $comparison eq '<' )      { return $added < $matcher }
+        elsif ( $comparison eq '>' )      { return $added > $matcher }
 
-	    return;
+        return;
     }
     else {
         return $hr->{$prop} =~ /$matcher/i;
