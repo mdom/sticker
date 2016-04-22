@@ -2,7 +2,9 @@
 
 use strict;
 use warnings;
-use App::Sticker;
+use OptArgs qw/class_optargs/;
+my ($class, $opts) = class_optargs('App::Sticker::Commands');
 
-my $app = App::Sticker->new_with_cmd();
-$app->execute();
+exit $class->new($opts)->run();
+
+__END__

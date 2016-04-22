@@ -8,7 +8,7 @@ use MooX::Options
   protect_argv => 0;
 
 extends 'App::Sticker::Cmd';
-with( 'App::Sticker::UA', 'App::Sticker::Util', 'App::Sticker::Modifier' );
+with( 'App::Sticker::UA', 'App::Sticker::Util' );
 
 sub execute {
     my $self = shift;

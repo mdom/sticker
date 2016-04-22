@@ -39,20 +39,4 @@ sub _expand_nums {
     return @nums;
 }
 
-sub normalize_url {
-    my $self       = shift;
-    my $url_string = shift;
-    my $url        = Mojo::URL->new($url_string);
-    ## If the user enters a url without a protocoll or a path, Mojo::URL parses
-    ## the hostname as path.
-    if ( not defined $url->host and defined $url->path ) {
-        $url = Mojo::URL->new()->host( $url->path->trailing_slash(0) );
-    }
-    $url->scheme('http') if !$url->scheme;
-    $url->authority('')  if !$url->authority;
-    $url->port(undef)    if $url->port && $url->port == 80;
-    $url->path('/')      if $url->path eq '';
-    return $url;
-}
-
 1;
