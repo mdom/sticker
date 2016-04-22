@@ -31,4 +31,14 @@ arg files => (
     greedy  => 1,
 );
 
+subcmd
+  cmd     => 'add',
+  comment => 'Add urls.';
+
+arg urls => (
+    isa     => 'ArrayRef',
+    comment => 'URLs to add.',
+    greedy  => 1,
+);
+
 1;

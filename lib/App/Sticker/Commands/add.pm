@@ -1,20 +1,19 @@
-package App::Sticker::Cmd::add;
-use strict;
-use warnings;
-use Moo;
-use MooX::Options
-  usage_string => 'USAGE: %c %o URL...',
-  flavour      => [qw( pass_through )],
-  protect_argv => 0;
+package App::Sticker::Commands::add;
+use Mojo::Base 'App::Sticker::Command';
 
-extends 'App::Sticker::Cmd';
-with( 'App::Sticker::UA', 'App::Sticker::Util' );
+has 'urls';
 
-sub execute {
+sub run {
     my $self = shift;
-    my @urls = @ARGV;
-    return unless \@urls;
-    $self->add_urls( \@urls );
+    $self->ua->queue( [ map { $self->normalize_url($_) } @{ $self->urls } ] );
+    $self->ua->on(
+        process_url => sub {
+            my ( $ua, $tx, $url ) = @_;
+            $self->import_url( $tx, $url );
+        }
+    );
+    $self->ua->start->wait;
+    return 0;
 }
 
 1;

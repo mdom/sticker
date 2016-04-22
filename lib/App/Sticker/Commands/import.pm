@@ -20,7 +20,6 @@ sub run {
     $self->ua->on(
         process_url => sub {
             my ( $ua, $tx, $url ) = @_;
-            warn "Got $url\n";
             $self->import_url( $tx, $url );
             next unless exists $attrs{$url}->{add_date};
             $self->query(
