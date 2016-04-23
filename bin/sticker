@@ -5,6 +5,6 @@ use warnings;
 use OptArgs qw/class_optargs/;
 my ($class, $opts) = class_optargs('App::Sticker::Commands');
 
-exit $class->new($opts)->run();
+exit $class->new($opts)->startup->run;
 
 __END__

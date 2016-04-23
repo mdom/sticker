@@ -3,6 +3,7 @@ use Mojo::Base -base;
 
 use App::Sticker::URLQueue;
 use Mojo::SQLite;
+use Mojo::SQLite::Migrations;
 use Mojo::ByteStream 'b';
 use Path::Tiny;
 use Config::Tiny;
@@ -23,6 +24,12 @@ has config => sub {
     );
     return { %defaults, %{ $self->read_config } };
 };
+
+sub startup {
+    my $self = shift;
+    $self->sql->migrations->from_data->migrate;
+    return $self;
+}
 
 sub read_config {
     my $self = shift;
@@ -114,3 +121,17 @@ sub normalize_url {
 }
 
 1;
+
+__DATA__
+
+@@ migrations
+
+-- 1 up
+
+create table if not exists urls (
+	url_id integer primary key,
+	title text,
+	content text,
+	url text unique,
+	add_date text
+);
