@@ -7,13 +7,20 @@ use Mojo::ByteStream 'b';
 use Path::Tiny;
 use Config::Tiny;
 
-has ua        => sub { App::Sticker::URLQueue->new };
+has ua => sub {
+    my $self = shift;
+    App::Sticker::URLQueue->new( worker => $self->config->{worker} );
+};
+
 has sql       => sub { Mojo::SQLite->new('sticker.db'); };
 has stopwords => sub { [qw(and the is are)] };
 
 has config => sub {
-    my $self = shift;
-    my %defaults = ( url_viewer => 'xdg-open %s', );
+    my $self     = shift;
+    my %defaults = (
+        url_viewer => 'xdg-open %s',
+        worker     => 16,
+    );
     return { %defaults, %{ $self->read_config } };
 };
 
