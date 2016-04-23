@@ -4,10 +4,37 @@ use Mojo::Base -base;
 use App::Sticker::URLQueue;
 use Mojo::SQLite;
 use Mojo::ByteStream 'b';
+use Path::Tiny;
+use Config::Tiny;
 
 has ua        => sub { App::Sticker::URLQueue->new };
 has sql       => sub { Mojo::SQLite->new('sticker.db'); };
 has stopwords => sub { [qw(and the is are)] };
+
+has config => sub {
+    my $self = shift;
+    my %defaults = ( url_viewer => 'xdg-open %s', );
+    return { %defaults, %{ $self->read_config } };
+};
+
+sub read_config {
+    my $self = shift;
+
+    my $file =
+      $ENV{STICKER_CONFIG_DIR} ? path( $ENV{STICKER_CONFIG_DIR} )
+      : path(
+          $ENV{XDG_CONFIG_HOME} ? $ENV{XDG_CONFIG_HOME}
+        : $^O eq "MSWin32"      ? $ENV{APPDATA}
+        : $^O eq 'darwin'       ? '~/Library/Application Support'
+        :                         '~/.config/'
+      )->child('sticker')->child('config');
+
+    return {} if !$file->exists;
+    my $file_config = Config::Tiny->read( $file, 'utf8' );
+    warn Config::Tiny->errstr . "\n" if !$file_config;
+    return {} if !( $file_config && exists $file_config->{_} );
+    return $file_config->{_};
+}
 
 sub db { return shift->sql->db }
 
