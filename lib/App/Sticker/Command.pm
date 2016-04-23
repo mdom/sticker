@@ -9,7 +9,7 @@ has ua        => sub { App::Sticker::URLQueue->new };
 has sql       => sub { Mojo::SQLite->new('sticker.db'); };
 has stopwords => sub { [qw(and the is are)] };
 
-sub query { shift->sql->db->query(@_) }
+sub db { return shift->sql->db }
 
 sub import_url {
     my ( $self, $tx, $url ) = @_;
@@ -43,7 +43,7 @@ sub import_url {
         }
 
         my @values = ( $title // '', $content // '', $url, scalar time() );
-        $self->query(
+        $self->db->query(
 'INSERT INTO urls ( title, content, url, add_date ) VALUES ( ?, ?, ?, ? )',
             @values
         );
