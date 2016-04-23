@@ -45,9 +45,10 @@ subcmd
   cmd     => 'search',
   comment => 'Search database.';
 
-arg query => (
-    isa     => 'Str',
-    comment => 'Search term.',
+arg queries => (
+    isa     => 'ArrayRef',
+    comment => 'Search terms.',
+    greedy  => 1,
 );
 
 subcmd
