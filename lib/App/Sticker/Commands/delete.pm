@@ -1,16 +1,14 @@
-package App::Sticker::Cmd::delete;
-use strict;
-use warnings;
-use Moo;
-extends 'App::Sticker::Cmd';
-with( 'App::Sticker::Util', 'App::Sticker::Modifier' );
+package App::Sticker::Commands::delete;
+use Mojo::Base 'App::Sticker::Command';
 
-sub execute {
+has 'ids';
+
+sub run {
     my ($self) = @_;
-    my @urls = $self->to_url(@ARGV);
-    die "No urls for @urls\n"
-      if !@urls;
-    return $self->base->db->delete(@urls);
+    my @ids = @{ $self->ids || [] };
+    ## TODO implement with in()
+    $self->db->query('delete from urls where url_id = ?',$_) for @ids;
+    return 0;
 }
 
 1;

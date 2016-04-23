@@ -50,4 +50,14 @@ arg query => (
     comment => 'Search term.',
 );
 
+subcmd
+  cmd     => 'delete',
+  comment => 'Delete bookmars.';
+
+arg ids => (
+    isa     => 'ArrayRef',
+    comment => 'Bookmark ids to delete.',
+    greedy  => 1,
+);
+
 1;
