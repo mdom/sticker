@@ -13,7 +13,11 @@ has ua => sub {
     App::Sticker::URLQueue->new( worker => $self->config->{worker} );
 };
 
-has sql       => sub { Mojo::SQLite->new('sticker.db'); };
+has sql => sub {
+    my $self = shift;
+    Mojo::SQLite->new( $self->config->{db_file} );
+};
+
 has stopwords => sub { [qw(and the is are)] };
 
 has config => sub {
@@ -21,9 +25,20 @@ has config => sub {
     my %defaults = (
         url_viewer => 'xdg-open %s',
         worker     => 16,
+        db_file    => $self->_build_db_file,
     );
     return { %defaults, %{ $self->read_config } };
 };
+
+sub _build_db_file {
+    my $dir = path(
+          $^O eq "MSWin32" ? $ENV{APPDATA}
+        : $^O eq 'darwin'  ? '~/Library/Application Support'
+        :                    '~/.local/share/'
+    )->child('sticker');
+    $dir->mkpath if !$dir->exists;
+    return $dir->child('bookmarks.db')->stringify;
+}
 
 sub startup {
     my $self = shift;
