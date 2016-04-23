@@ -1,22 +1,19 @@
-package App::Sticker::Cmd::open;
-use strict;
-use warnings;
-use Moo;
+package App::Sticker::Commands::open;
+use Mojo::Base 'App::Sticker::Command';
 use String::ShellQuote 'shell_quote';
-extends 'App::Sticker::Cmd';
-with('App::Sticker::Util');
 
-sub execute {
+has 'id';
+
+sub run {
     my $self = shift;
-    my @urls = $self->to_url(@ARGV);
-    die "No urls for @urls\n"
-      if !@urls;
-    for my $url (@urls) {
-        system($command ) == 0 my $viewer = $self->base->url_viewer;
-        my $command = sprintf( $viewer, shell_quote($url) );
-          or warn "Error calling $command: $!\n";
-    }
-    return;
+    my $url =
+      $self->db->query( 'select url from urls where url_id = ?', $self->id )->hash->{url};
+    return 1 if !$url;
+    my $viewer = $self->config->{url_viewer};
+    my $command = sprintf( $viewer, shell_quote($url) );
+    system($command) == 0
+      or warn "Error calling $command: $!\n";
+    return 0;
 }
 
 1;

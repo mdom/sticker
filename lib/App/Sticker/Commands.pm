@@ -61,4 +61,13 @@ arg ids => (
     greedy  => 1,
 );
 
+subcmd
+  cmd     => 'open',
+  comment => 'Open bookmarks.';
+
+arg id => (
+    isa     => 'Int',
+    comment => 'Bookmark to open.',
+);
+
 1;
