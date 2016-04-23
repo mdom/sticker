@@ -41,4 +41,13 @@ arg urls => (
     greedy  => 1,
 );
 
+subcmd
+  cmd     => 'search',
+  comment => 'Search database.';
+
+arg query => (
+    isa     => 'Str',
+    comment => 'Search term.',
+);
+
 1;

@@ -1,21 +1,21 @@
-package App::Sticker::Cmd::search;
-use strict;
-use warnings;
-use Moo;
+package App::Sticker::Commands::search;
+use Mojo::Base 'App::Sticker::Command';
 use Mojo::ByteStream 'b';
-extends 'App::Sticker::Cmd';
+use Mojo::Util 'tablify';
 
-sub execute {
-    my $self    = shift;
-    my $matches = $self->base->db->dbh->selectall_arrayref($ARGV[0], { Slice => {} });
-    my $hist_fh = $self->base->base_dir->child('last_search')->openw_utf8();
+has 'query';
 
-    for my $doc (@$matches) {
-        my $line =
-          sprintf( "%d %s - %s ", $doc->{rowid}, $doc->{url}, $doc->{title} );
-        print b($line)->encode . "\n";
-        print {$hist_fh} $doc->{url} . "\n";
-    }
+sub run {
+    my $self = shift;
+    my $query = $self->query ? '%' . $self->query . '%' : '%';
+
+    my @matches =
+      $self->db->query( 'select rowid,substr(title,0,40),url from urls where url like ? or title like ?',
+        $query, $query )->arrays->each;
+
+    my $table = tablify [ [qw(ID TITLE URL)], @matches ];
+    print b($table)->encode;
+    return 0;
 }
 
 1;
