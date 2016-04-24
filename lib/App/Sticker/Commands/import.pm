@@ -17,6 +17,9 @@ sub run {
     my %attrs = map { $self->normalize_url( $_->{href} ) => $_ } @attrs;
     my @urls = keys %attrs;
 
+    @urls = $self->filter_new_urls(@urls);
+    return 0 if !@urls;
+
     $self->ua->on(
         process_url => sub {
             my ( $ua, $tx, $url ) = @_;

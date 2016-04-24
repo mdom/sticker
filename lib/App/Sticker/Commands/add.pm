@@ -5,7 +5,11 @@ has 'urls';
 
 sub run {
     my $self = shift;
-    $self->ua->queue( [ map { $self->normalize_url($_) } @{ $self->urls } ] );
+    my @urls = map { $self->normalize_url($_) } @{ $self->urls };
+    @urls = $self->filter_new_urls(@urls);
+    return 0 if !@urls;
+
+    $self->ua->queue( \@urls );
     $self->ua->on(
         process_url => sub {
             my ( $ua, $tx, $url ) = @_;
