@@ -6,8 +6,9 @@ has 'ids';
 sub run {
     my ($self) = @_;
     my @ids = @{ $self->ids || [] };
-    ## TODO implement with in()
-    $self->db->query('delete from urls where url_id = ?',$_) for @ids;
+    my $tx = $self->db->begin;
+    $self->db->query( 'delete from urls where url_id = ?', $_ ) for @ids;
+    $tx->commit;
     return 0;
 }
 
