@@ -137,13 +137,16 @@ sub normalize_url {
 
 sub filter_new_urls {
     my ( $self, @urls ) = @_;
-    $self->db->query('create temp table if not exists tmp_urls (url);delete from tmp_urls;');
+    $self->db->query(
+        'create temp table if not exists tmp_urls (url);delete from tmp_urls;');
 
     my $tx = $self->db->begin;
-    $self->db->query('insert into tmp_urls values (?)',$_) for @urls;
+    $self->db->query( 'insert into tmp_urls values (?)', $_ ) for @urls;
     $tx->commit;
 
-    return $self->db->query('select url from tmp_urls except select url from urls ')->arrays->flatten->each;
+    return $self->db->query(
+        'select url from tmp_urls except select url from urls ')
+      ->arrays->flatten->each;
 }
 
 1;

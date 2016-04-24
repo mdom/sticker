@@ -7,7 +7,8 @@ has 'id';
 sub run {
     my $self = shift;
     my $url =
-      $self->db->query( 'select url from urls where url_id = ?', $self->id )->hash->{url};
+      $self->db->query( 'select url from urls where url_id = ?', $self->id )
+      ->hash->{url};
     return 1 if !$url;
     my $viewer = $self->config->{url_viewer};
     my $command = sprintf( $viewer, shell_quote($url) );

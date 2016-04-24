@@ -25,10 +25,8 @@ sub run {
             my ( $ua, $tx, $url ) = @_;
             $self->import_url( $tx, $url );
             next unless exists $attrs{$url}->{add_date};
-            $self->db->query(
-                'UPDATE urls SET add_date = ? WHERE url = ?',
-                $attrs{$url}->{add_date}, $url
-            );
+            $self->db->query( 'UPDATE urls SET add_date = ? WHERE url = ?',
+                $attrs{$url}->{add_date}, $url );
         }
     );
 
