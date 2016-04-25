@@ -166,3 +166,16 @@ create table if not exists urls (
 	url text unique,
 	add_date text
 );
+
+-- 2 up
+
+create table if not exists tags (
+	tag_id integer primary key,
+	name text unique
+);
+
+create table if not exists tags_urls (
+	tag_id integer references tags,
+	url_id integer references urls,
+	primary key ( tag_id, url_id )
+);
