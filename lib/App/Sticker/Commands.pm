@@ -42,6 +42,32 @@ arg urls => (
 );
 
 subcmd
+  cmd     => 'tag',
+  comment => 'Manage tags.';
+
+arg command => (
+    isa      => 'SubCmd',
+    comment  => 'sub command to run',
+    required => 1,
+);
+
+subcmd
+  cmd     => [qw(tag add)],
+  comment => 'Add tag to urls.';
+
+arg tag => (
+    isa     => 'Str',
+    comment => 'Tag to add.',
+);
+
+arg bookmarks => (
+    isa     => 'ArrayRef',
+    comment => 'Which bookmarks to tag.',
+    greedy  => 1,
+);
+
+
+subcmd
   cmd     => 'search',
   comment => 'Search database.';
 
