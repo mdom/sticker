@@ -115,7 +115,7 @@ subcmd
   cmd     => 'delete',
   comment => 'Delete bookmarks.';
 
-arg ids => (
+arg bookmarks => (
     isa     => 'ArrayRef',
     comment => 'Bookmark ids to delete.',
     greedy  => 1,
