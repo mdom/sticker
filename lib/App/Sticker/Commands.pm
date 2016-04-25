@@ -93,7 +93,7 @@ arg queries => (
 
 subcmd
   cmd     => 'delete',
-  comment => 'Delete bookmars.';
+  comment => 'Delete bookmarks.';
 
 arg ids => (
     isa     => 'ArrayRef',
