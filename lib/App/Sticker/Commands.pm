@@ -66,6 +66,20 @@ arg bookmarks => (
     greedy  => 1,
 );
 
+subcmd
+  cmd     => [qw(tag delete)],
+  comment => 'Add tag to urls.';
+
+arg tag => (
+    isa     => 'Str',
+    comment => 'Tag to delete.',
+);
+
+arg bookmarks => (
+    isa     => 'ArrayRef',
+    comment => 'Which bookmarks to untag.',
+    greedy  => 1,
+);
 
 subcmd
   cmd     => 'search',
