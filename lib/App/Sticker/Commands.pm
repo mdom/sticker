@@ -15,7 +15,7 @@ opt help => (
     alias   => 'h',
 );
 
-opt config => (
+opt config_file => (
     isa     => 'Str',
     comment => 'Specify a custom config file location.',
     alias   => 'c',

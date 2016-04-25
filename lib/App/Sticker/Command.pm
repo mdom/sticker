@@ -8,6 +8,17 @@ use Mojo::ByteStream 'b';
 use Path::Tiny;
 use Config::Tiny;
 
+has config_file => sub {
+    return
+      $ENV{STICKER_CONFIG_DIR} ? path( $ENV{STICKER_CONFIG_DIR} )
+      : path(
+          $ENV{XDG_CONFIG_HOME} ? $ENV{XDG_CONFIG_HOME}
+        : $^O eq "MSWin32"      ? $ENV{APPDATA}
+        : $^O eq 'darwin'       ? '~/Library/Application Support'
+        :                         '~/.config/'
+      )->child('sticker')->child('config')->stringify;
+};
+
 has ua => sub {
     my $self = shift;
     App::Sticker::URLQueue->new( worker => $self->config->{worker} );
@@ -48,21 +59,12 @@ sub startup {
 
 sub read_config {
     my $self = shift;
-
-    my $file =
-      $ENV{STICKER_CONFIG_DIR} ? path( $ENV{STICKER_CONFIG_DIR} )
-      : path(
-          $ENV{XDG_CONFIG_HOME} ? $ENV{XDG_CONFIG_HOME}
-        : $^O eq "MSWin32"      ? $ENV{APPDATA}
-        : $^O eq 'darwin'       ? '~/Library/Application Support'
-        :                         '~/.config/'
-      )->child('sticker')->child('config');
-
+    my $file = path( $self->config_file );
     return {} if !$file->exists;
-    my $file_config = Config::Tiny->read( $file, 'utf8' );
-    warn Config::Tiny->errstr . "\n" if !$file_config;
-    return {} if !( $file_config && exists $file_config->{_} );
-    return $file_config->{_};
+    my $config = Config::Tiny->read( $file, 'utf8' );
+    warn Config::Tiny->errstr . "\n" if !$config;
+    return {} if !( $config && exists $config->{_} );
+    return $config->{_};
 }
 
 sub db { return shift->sql->db }
