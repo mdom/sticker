@@ -13,6 +13,10 @@ sub run {
     $self->db->query( 'delete from tags_urls where tag_id = ? and url_id = ?',
         $id, $_ )
       for @{ $self->bookmarks };
+    $self->db->query(
+'delete from tags where name = ? and not exists ( select 1 from tags_urls join tags using ( tag_id ) where name = ? )',
+        $self->tag, $self->tag
+    );
     $tx->commit;
     return 0;
 }

@@ -75,6 +75,12 @@ arg tag => (
     comment => 'Tag to delete.',
 );
 
+arg bookmarks => (
+    isa     => 'ArrayRef',
+    comment => 'Bookmarks to untag.',
+    greedy  => 1,
+);
+
 subcmd
   cmd     => [qw(tag merge)],
   comment => 'Add tag to urls.';
