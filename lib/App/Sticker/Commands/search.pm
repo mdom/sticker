@@ -8,14 +8,27 @@ has 'queries';
 sub run {
     my $self = shift;
 
-    my $stmt = 'select url_id,substr(title,0,40),url from urls ';
+    my $stmt = <<'EOF';
+        select urls.url_id as id,
+               substr(urls.title,0,40) as title,
+               urls.url as url
+            from urls
+                 left outer join tags_urls using (url_id)
+                 left outer join tags using (tag_id)
+EOF
 
     my @values;
     my @wheres;
     for my $query ( @{ $self->queries || ['%'] } ) {
-        $query = "%$query%" if $query ne '%';
-        push @values, $query, $query;
-        push @wheres, ' ( url like ? or title like ? )';
+        if ( $query =~ /^t:(.*)$/ ) {
+            push @values, $1;
+            push @wheres, ' tags.name = ? ';
+        }
+        else {
+            $query = "%$query%" if $query ne '%';
+            push @values, $query, $query;
+            push @wheres, ' ( urls.url like ? or urls.title like ? )';
+        }
     }
 
     $stmt .= 'where ' . join( ' and ', @wheres );
