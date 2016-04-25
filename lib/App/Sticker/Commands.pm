@@ -68,7 +68,7 @@ arg bookmarks => (
 
 subcmd
   cmd     => [qw(tag delete)],
-  comment => 'Add tag to urls.';
+  comment => 'Delete tag from urls.';
 
 arg tag => (
     isa     => 'Str',
@@ -83,7 +83,7 @@ arg bookmarks => (
 
 subcmd
   cmd     => [qw(tag merge)],
-  comment => 'Add tag to urls.';
+  comment => 'Merge tags.';
 
 arg from_tag => (
     isa     => 'Str',
