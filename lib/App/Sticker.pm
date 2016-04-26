@@ -1,110 +1,27 @@
 package App::Sticker;
 
-# ABSTRACT: Bookmark manager for the command line
-
-use strict;
-use warnings;
-
-use Moo;
-use MooX::Cmd;
-use MooX::Options flavour => [qw( pass_through )], protect_argv => 0;
-
-use App::Sticker::DB;
-use Path::Tiny;
-
-use Mojo::JSON::MaybeXS;
-use Mojo::JSON qw(encode_json decode_json);
-
 our $VERSION = '0.01';
 
-has db => ( is => 'lazy' );
+=pod
 
-option base_dir => (
-    is     => 'lazy',
-    coerce => sub { path( $_[0] ) },
-    format => 's',
-    doc    => 'Basedir for config and db'
-);
+=head1 NAME
 
-option db_file =>
-  ( is => 'lazy', format => 's', doc => 'Database file to use' );
+sticker - Bookmark manager for the command line
 
-option db_backup => (
-    is          => 'ro',
-    negativable => 1,
-    default     => sub { 1 },
-    doc         => 'Backup database before changing it'
-);
+=head1 COPYRIGHT AND LICENSE
 
-option worker =>
-  ( is => 'ro', format => 'i', doc => 'Number of workers for downloading' );
-option url_viewer => (
-    is     => 'ro',
-    format => 's',
-    doc    => 'Command to view urls',
-);
-option stopwords => (
-    is     => 'ro',
-    format => 's@',
-    doc    => 'Words to ignore for content search',
-);
+Copyright 2016 Mario Domgoergen C<< <mario@domgoergen.com> >>
 
-sub BUILDARGS {
-    my ( $class, @args ) = @_;
-    my $args = ref $args[0] ? $args[0] : {@args};
-    my %default_config = (
-        url_viewer => 'iceweasel -new-tab %s',
-        worker     => 5,
-        base_dir   => '~/.sticker',
-    );
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
 
-    ## TODO combine command line args and configuration file
-    my $config = { %default_config, %$args };
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-    my $file_options = {};
-    my $config_file  = path( $config->{base_dir} )->child('config');
-    if ( $config_file->exists ) {
-        $file_options = eval { decode_json( $config_file->slurp_utf8 ) };
-        if ($@) {
-            die "$0: Error reading configuration file: $@\n";
-        }
-    }
-    my @stopwords;
-    for my $ref ( \%default_config, $args, $file_options ) {
-        if ( exists $ref->{stopwords} and ref( $ref->{stopwords} ) eq 'ARRAY' )
-        {
-            push @stopwords, @{ $ref->{stopwords} };
-        }
-    }
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    $config =
-      { %default_config, %$file_options, %$args, stopwords => \@stopwords };
-
-    return $config;
-}
-
-sub _build_db_file {
-    my $self = shift;
-    return $self->base_dir->child('sticker.db');
-}
-
-sub _build_db {
-    my $self = shift;
-    return App::Sticker::DB->new(
-        db_file => $self->db_file,
-        backup  => $self->db_backup
-    );
-}
-
-sub _build_base_dir {
-    my $self     = shift;
-    my $base_dir = path('~/.sticker/');
-    $base_dir->mkpath();
-    return $base_dir;
-}
-
-sub execute {
-    return;
-}
-
-1;
+=cut
