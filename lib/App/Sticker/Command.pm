@@ -101,10 +101,9 @@ sub import_url {
         }
 
         my @values = ( $title // '', $content // '', $url, scalar time() );
-        $self->db->query(
-'INSERT INTO urls ( title, content, url, add_date ) VALUES ( ?, ?, ?, ? )',
-            @values
-        );
+        $self->db->query( '
+		insert or ignore into urls ( title, content, url, add_date )
+		VALUES ( ?, ?, ?, ? )', @values );
 
     }
     else {
