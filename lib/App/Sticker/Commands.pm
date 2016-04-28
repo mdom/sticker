@@ -130,4 +130,38 @@ arg id => (
     comment => 'Bookmark to open.',
 );
 
+subcmd
+  cmd     => 'source',
+  comment => 'Manage sources.';
+
+arg command => (
+    isa      => 'SubCmd',
+    comment  => 'sub command to run',
+    required => 1,
+);
+
+subcmd
+  cmd     => [qw(source add)],
+  comment => 'Add source.';
+
+arg file => (
+    isa      => 'Str',
+    comment  => 'Source file to add.',
+    required => 1,
+);
+
+subcmd
+  cmd     => [qw(source delete)],
+  comment => 'Delete source.';
+
+arg file => (
+    isa      => 'Str',
+    comment  => 'Source file to delete.',
+    required => 1,
+);
+
+subcmd
+  cmd     => [qw(source list)],
+  comment => 'List sources.';
+
 1;

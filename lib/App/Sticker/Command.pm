@@ -195,3 +195,11 @@ create table if not exists tags_urls (
 	url_id integer references urls,
 	primary key ( tag_id, url_id )
 );
+
+-- 3 up
+
+create table if not exists sources (
+	source_id integer primary key,
+	location text,
+	last_checked integer
+);
