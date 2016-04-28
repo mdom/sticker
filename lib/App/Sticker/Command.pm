@@ -137,6 +137,37 @@ sub import_url {
     return;
 }
 
+sub import_html {
+    my ( $self, @files ) = @_;
+    my @attrs;
+    for my $file (@files) {
+        my $content = path($file)->slurp_utf8;
+        my $dom     = Mojo::DOM->new($content);
+        my $attrs   = $dom->find('a["href"]')->map('attr')
+          ->grep( sub { $_->{href} =~ /^http/ } )->to_array;
+        push @attrs, @$attrs;
+    }
+    my %attrs = map { $self->normalize_url( $_->{href} ) => $_ } @attrs;
+    my @urls = keys %attrs;
+
+    @urls = $self->filter_new_urls(@urls);
+    return 0 if !@urls;
+
+    $self->ua->on(
+        process_url => sub {
+            my ( $ua, $tx, $url ) = @_;
+            $self->import_url( $tx, $url );
+            next unless exists $attrs{$url}->{add_date};
+            $self->db->query( 'UPDATE urls SET add_date = ? WHERE url = ?',
+                $attrs{$url}->{add_date}, $url );
+        }
+    );
+
+    $self->ua->queue( \@urls );
+
+    return $self->ua->start;
+}
+
 sub normalize_url {
     my $self       = shift;
     my $url_string = shift;
