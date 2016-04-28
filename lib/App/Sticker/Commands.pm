@@ -164,4 +164,8 @@ subcmd
   cmd     => [qw(source list)],
   comment => 'List sources.';
 
+subcmd
+  cmd     => [qw(source update)],
+  comment => 'Update sources.';
+
 1;
