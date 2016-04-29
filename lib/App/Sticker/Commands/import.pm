@@ -6,7 +6,8 @@ has 'files';
 
 sub run {
     my $self = shift;
-    $self->import_html( @{ $self->files } )->wait;
+    $self->import_html( @{ $self->files } );
+    $self->ua->start->wait;
     return 0;
 }
 

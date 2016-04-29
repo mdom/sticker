@@ -10,6 +10,12 @@ has ua => sub { Mojo::UserAgent->new( max_redirects => 5 ) };
 has worker => 16;
 has delay => sub { Mojo::IOLoop->delay };
 
+sub add_urls {
+    my ( $self, @urls ) = @_;
+    push @{ $self->queue }, @urls;
+    return;
+}
+
 sub start {
     my ( $self, $cb ) = @_;
 

@@ -163,9 +163,8 @@ sub import_html {
         }
     );
 
-    $self->ua->queue( \@urls );
-
-    return $self->ua->start;
+    $self->ua->add_urls(@urls);
+    return;
 }
 
 sub normalize_url {
