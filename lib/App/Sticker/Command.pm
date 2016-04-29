@@ -2,6 +2,7 @@ package App::Sticker::Command;
 use Mojo::Base -base;
 
 use App::Sticker::URLQueue;
+use App::Sticker::Model::Tags;
 use Mojo::SQLite;
 use Mojo::SQLite::Migrations;
 use Mojo::ByteStream 'b';
@@ -27,6 +28,10 @@ has ua => sub {
 has sql => sub {
     my $self = shift;
     Mojo::SQLite->new( $self->config->{db_file} );
+};
+
+has tags => sub {
+    state $tags = App::Sticker::Model::Tags->new( db => shift->sql->db );
 };
 
 has stopwords => sub {
