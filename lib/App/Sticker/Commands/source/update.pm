@@ -6,8 +6,11 @@ sub run {
     my $time = time;
     my $sources =
       $self->db->query('select location, last_checked from sources')->hashes;
-    my @files = map { $_->{location} } @$sources;
-    $self->import_html(@files)->wait;
+    for my $source (@$sources) {
+        $self->import_html( $source->{last_checked}, $source->{location} );
+    }
+    my $delay = $self->ua->start;
+    $delay->wait if $delay;
     $self->db->query( 'update sources set last_checked = ?', $time );
     return 0;
 }

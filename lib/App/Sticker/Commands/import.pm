@@ -6,8 +6,9 @@ has 'files';
 
 sub run {
     my $self = shift;
-    $self->import_html( @{ $self->files } );
-    $self->ua->start->wait;
+    $self->import_html( 0, @{ $self->files } );
+    my $delay = $self->ua->start;
+    $delay->wait if $delay;
     return 0;
 }
 

@@ -138,7 +138,7 @@ sub import_url {
 }
 
 sub import_html {
-    my ( $self, @files ) = @_;
+    my ( $self, $last_checked, @files ) = @_;
     my @attrs;
     for my $file (@files) {
         my $content = path($file)->slurp_utf8;
@@ -147,7 +147,9 @@ sub import_html {
           ->grep( sub { $_->{href} =~ /^http/ } )->to_array;
         push @attrs, @$attrs;
     }
-    my %attrs = map { $self->normalize_url( $_->{href} ) => $_ } @attrs;
+    my %attrs =
+      map { $self->normalize_url( $_->{href} ) => $_ }
+      grep { $_->{add_date} > $last_checked } @attrs;
     my @urls = keys %attrs;
 
     @urls = $self->filter_new_urls(@urls);
